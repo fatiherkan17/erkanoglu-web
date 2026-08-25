@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model ProjectRequest {
+  id       Int    @id @default(autoincrement())
+  fullName String
+  phone    String
+
+  province     String
+  district     String
+  neighborhood String
+
+  buildingType    String
+  projectStage    String
+  approximateArea String?
+  interestAreas   String
+  description     String?
+
+  status    String   @default("YENI")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project?
+}
+
+model Project {
+  id        Int     @id @default(autoincrement())
+  projectNo String  @unique
+  name      String?
+  status    String  @default("AKTIF")
+
+  projectRequestId Int            @unique
+  projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
