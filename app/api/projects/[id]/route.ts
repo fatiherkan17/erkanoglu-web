@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
-const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" });
-const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+import { prisma } from "@/lib/prisma";
 
 type RouteContext = { params: Promise<{ id: string }> };
 const allowedStatuses = ["AKTIF", "SOZLESME", "BEKLEMEDE", "TAMAMLANDI", "IPTAL"];
@@ -30,7 +24,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const id = Number((await params).id);
     if (!Number.isInteger(id)) return NextResponse.json({ success: false, message: "Geçersiz proje numarası." }, { status: 400 });
     const body = await request.json();
-
     const status = clean(body.status);
     const hasStatus = Object.prototype.hasOwnProperty.call(body, "status");
     const published = typeof body.published === "boolean" ? body.published : undefined;
@@ -39,34 +32,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const publicSummary = clean(body.publicSummary) || null;
     const coverImageUrl = clean(body.coverImageUrl) || null;
     const galleryImages = clean(body.galleryImages) || null;
-
-    if (hasStatus && !allowedStatuses.includes(status)) {
-      return NextResponse.json({ success: false, message: "Geçersiz proje durumu." }, { status: 400 });
-    }
-    if (category && !allowedCategories.includes(category)) {
-      return NextResponse.json({ success: false, message: "Geçersiz proje kategorisi." }, { status: 400 });
-    }
+    if (hasStatus && !allowedStatuses.includes(status)) return NextResponse.json({ success: false, message: "Geçersiz proje durumu." }, { status: 400 });
+    if (category && !allowedCategories.includes(category)) return NextResponse.json({ success: false, message: "Geçersiz proje kategorisi." }, { status: 400 });
     if (body.galleryImages !== undefined && galleryImages) {
       try {
         const images = JSON.parse(galleryImages);
-        if (!Array.isArray(images) || images.some((item) => typeof item !== "string")) {
-          throw new Error("invalid gallery");
-        }
+        if (!Array.isArray(images) || images.some((item) => typeof item !== "string")) throw new Error("invalid gallery");
       } catch {
         return NextResponse.json({ success: false, message: "Galeri görselleri geçerli bir JSON dizi olmalıdır." }, { status: 400 });
       }
     }
-
-    const data: {
-      status?: string;
-      published?: boolean;
-      category?: string;
-      publicTitle?: string | null;
-      publicSummary?: string | null;
-      coverImageUrl?: string | null;
-      galleryImages?: string | null;
-    } = {};
-
+    const data: { status?: string; published?: boolean; category?: string; publicTitle?: string | null; publicSummary?: string | null; coverImageUrl?: string | null; galleryImages?: string | null } = {};
     if (hasStatus) data.status = status;
     if (published !== undefined) data.published = published;
     if (category) data.category = category;
@@ -74,11 +50,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (Object.prototype.hasOwnProperty.call(body, "publicSummary")) data.publicSummary = publicSummary;
     if (Object.prototype.hasOwnProperty.call(body, "coverImageUrl")) data.coverImageUrl = coverImageUrl;
     if (Object.prototype.hasOwnProperty.call(body, "galleryImages")) data.galleryImages = galleryImages;
-
-    if (Object.keys(data).length === 0) {
-      return NextResponse.json({ success: false, message: "Güncellenecek alan bulunamadı." }, { status: 400 });
-    }
-
+    if (Object.keys(data).length === 0) return NextResponse.json({ success: false, message: "Güncellenecek alan bulunamadı." }, { status: 400 });
     const project = await prisma.project.update({ where: { id }, data, include: { projectRequest: true } });
     return NextResponse.json({ success: true, message: "Proje güncellendi.", data: project });
   } catch (error) {
