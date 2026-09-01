@@ -9,6 +9,7 @@ function ProjeTalebiContent() {
   const searchParams = useSearchParams();
   const rawSource = searchParams.get("source") || "direct";
   const source = ["direct", "calculator", "collaboration"].includes(rawSource) ? rawSource : "direct";
+  const effectiveSource = searchParams.get("projectType") ? "calculator" : source;
   const [form, setForm] = useState(() => ({
     fullName: "", phone: "", email: "",
     projectType: searchParams.get("projectType") || "",
@@ -20,10 +21,8 @@ function ProjeTalebiContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    trackEvent("project_inquiry_start", {
-      source: searchParams.get("projectType") ? "calculator" : source,
-    });
-  }, [searchParams, source]);
+    trackEvent("project_inquiry_start", { source: effectiveSource });
+  }, [effectiveSource]);
 
   function update(field: string, value: string) { setForm((current) => ({ ...current, [field]: value })); }
 
@@ -35,12 +34,12 @@ function ProjeTalebiContent() {
         fullName: form.fullName, phone: form.phone, province: "Çanakkale",
         district: form.district || "Belirtilmedi", neighborhood: "Belirtilmedi",
         buildingType: form.projectType, projectStage: "Ön Görüşme", approximateArea: form.area || null,
-        interestAreas: source === "collaboration" ? "İş Birliği" : "Mimarlık / Ruhsat Projesi",
-        source,
-        description: `${source === "collaboration" ? "Başvuru kaynağı: İş Birliği\n" : ""}E-posta: ${form.email || "Belirtilmedi"}\nZamanlama: ${form.timeline || "Belirtilmedi"}\nBütçe: ${form.budget || "Belirtilmedi"}\n\n${form.description}`.trim(),
+        interestAreas: effectiveSource === "collaboration" ? "İş Birliği" : "Mimarlık / Ruhsat Projesi",
+        source: effectiveSource,
+        description: `${effectiveSource === "collaboration" ? "Başvuru kaynağı: İş Birliği\n" : ""}E-posta: ${form.email || "Belirtilmedi"}\nZamanlama: ${form.timeline || "Belirtilmedi"}\nBütçe: ${form.budget || "Belirtilmedi"}\n\n${form.description}`.trim(),
       }) });
       if (!response.ok) throw new Error("Talep gönderilemedi.");
-      trackEvent("project_inquiry_submit", { project_type: form.projectType, source });
+      trackEvent("project_inquiry_submit", { project_type: form.projectType, source: effectiveSource });
       setSuccess(true);
     } catch { setError("Talebiniz gönderilirken bir sorun oluştu. Lütfen tekrar deneyin."); }
     finally { setLoading(false); }
