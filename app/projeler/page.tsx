@@ -23,6 +23,18 @@ const categoryLabels: Record<string, string> = {
   MEVCUT_YAPI: "Mevcut Yapı",
 };
 
+function parseGallery(value: string | null) {
+  if (!value) return [] as string[];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : [];
+  } catch {
+    return [] as string[];
+  }
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<PublicProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,19 +90,22 @@ export default function ProjectsPage() {
           {!loading && projects.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2">
               {projects.map((project) => {
-                const images = project.galleryImages ? JSON.parse(project.galleryImages) as string[] : [];
+                const images = parseGallery(project.galleryImages);
                 const image = project.coverImageUrl || images[0];
                 return (
-                  <article key={project.id} className="group border border-white/10 bg-white/[0.03]">
-                    <div className="aspect-[16/10] overflow-hidden bg-white/5">
-                      {image ? <img src={image} alt={project.publicTitle || `${project.projectNo} projesi`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.2em] text-white/25">Görsel hazırlanıyor</div>}
-                    </div>
-                    <div className="p-7">
-                      <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.2em] text-white/35"><span>{categoryLabels[project.category] ?? project.category}</span><span>{project.status === "TAMAMLANDI" ? "Tamamlandı" : "Devam ediyor"}</span></div>
-                      <h3 className="mt-5 text-2xl font-medium">{project.publicTitle || project.projectNo}</h3>
-                      <p className="mt-4 text-sm leading-7 text-white/50">{project.publicSummary || "Proje detayları yakında yayınlanacaktır."}</p>
-                    </div>
-                  </article>
+                  <Link key={project.id} href={`/projeler/${project.id}`} className="group border border-white/10 bg-white/[0.03] transition hover:bg-white/[0.06]">
+                    <article>
+                      <div className="aspect-[16/10] overflow-hidden bg-white/5">
+                        {image ? <img src={image} alt={project.publicTitle || `${project.projectNo} projesi`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.2em] text-white/25">Görsel hazırlanıyor</div>}
+                      </div>
+                      <div className="p-7">
+                        <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.2em] text-white/35"><span>{categoryLabels[project.category] ?? project.category}</span><span>{project.status === "TAMAMLANDI" ? "Tamamlandı" : "Devam ediyor"}</span></div>
+                        <h3 className="mt-5 text-2xl font-medium">{project.publicTitle || project.projectNo}</h3>
+                        <p className="mt-4 text-sm leading-7 text-white/50">{project.publicSummary || "Proje detayları yakında yayınlanacaktır."}</p>
+                        <div className="mt-6 text-xs uppercase tracking-[0.2em] text-white/45">Projeyi incele →</div>
+                      </div>
+                    </article>
+                  </Link>
                 );
               })}
             </div>
