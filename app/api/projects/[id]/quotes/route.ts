@@ -1,12 +1,5 @@
-import "dotenv/config";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
-const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" });
-const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+import { prisma } from "@/lib/prisma";
 
 const allowedStatuses = ["TASLAK", "HAZIRLANIYOR", "GONDERILDI", "KABUL_EDILDI", "REDDEDILDI"];
 const allowedCurrencies = ["TRY", "EUR", "USD"];
@@ -29,11 +22,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   try {
     const projectId = Number((await params).id);
     if (!Number.isInteger(projectId)) return NextResponse.json({ success: false, message: "Geçersiz proje." }, { status: 400 });
-    const quotes = await prisma.quote.findMany({
-      where: { projectId },
-      orderBy: { quoteDate: "desc" },
-      include: { statusHistory: { orderBy: { changedAt: "desc" } } },
-    });
+    const quotes = await prisma.quote.findMany({ where: { projectId }, orderBy: { quoteDate: "desc" }, include: { statusHistory: { orderBy: { changedAt: "desc" } } } });
     return NextResponse.json({ success: true, data: quotes });
   } catch (error) {
     console.error("Quotes GET error:", error);
@@ -81,7 +70,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const projectId = Number((await params).id);
     if (!Number.isInteger(projectId)) return NextResponse.json({ success: false, message: "Geçersiz proje." }, { status: 400 });
-
     const body = await request.json() as Record<string, unknown>;
     const quoteId = Number(body.quoteId);
     if (!Number.isInteger(quoteId)) return NextResponse.json({ success: false, message: "Geçersiz teklif." }, { status: 400 });
@@ -121,7 +109,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     const statusChanged = data.status !== undefined && data.status !== quote.status;
-    const updated = await prisma.$transaction(async tx => {
+    const updated = await prisma.$transaction(async (tx) => {
       await tx.quote.update({ where: { id: quoteId }, data });
       if (statusChanged) await tx.quoteStatusHistory.create({ data: { quoteId, fromStatus: quote.status, toStatus: data.status! } });
       return tx.quote.findUniqueOrThrow({ where: { id: quoteId }, include: { statusHistory: { orderBy: { changedAt: "desc" } } } });
