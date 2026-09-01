@@ -2,7 +2,16 @@ import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://erkanoglu.com.tr";
-  const routes = ["/", "/evimi-hesapla", "/proje-talebi", "/canakkale-mimarlik", "/canakkale-ruhsat-projesi", "/canakkale-villa-projesi"];
+  const routes = [
+    "/",
+    "/evimi-hesapla",
+    "/proje-talebi",
+    "/projeler",
+    "/is-birligi",
+    "/canakkale-mimarlik",
+    "/canakkale-ruhsat-projesi",
+    "/canakkale-villa-projesi",
+  ];
 
   return routes.map((route) => ({
     url: `${baseUrl}${route}`,
