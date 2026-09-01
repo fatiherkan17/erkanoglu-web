@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import MeetingNotes from "./MeetingNotes";
+import Quotes from "./Quotes";
 
 type Project = { id:number; projectNo:string; name:string|null; status:string; createdAt:string; updatedAt:string; projectRequest:{ id:number; fullName:string; phone:string; province:string; district:string; neighborhood:string; buildingType:string; projectStage:string; approximateArea:string|null; interestAreas:string; description:string|null; createdAt:string; updatedAt:string; } };
 const statusOptions=[{value:"AKTIF",label:"Aktif"},{value:"BEKLEMEDE",label:"Beklemede"},{value:"TAMAMLANDI",label:"Tamamlandı"},{value:"IPTAL",label:"İptal"}];
@@ -26,6 +27,7 @@ export default function ProjectDetailPage(){
   <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Müşterinin Açıklaması</p><div className="mt-5 border-t border-neutral-200 pt-5 text-sm leading-7 text-neutral-700">{request.description||"Açıklama bulunmuyor."}</div></section>
   <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Proje Süreci</p><div className="mt-6 grid gap-3 md:grid-cols-4"><ProcessStep number="01" title="Talep" active/><ProcessStep number="02" title="İnceleme" active={processStatus!=="AKTIF"||project.createdAt!==request.createdAt}/><ProcessStep number="03" title="Teklif" active={processStatus==="AKTIF"||processStatus==="TAMAMLANDI"}/><ProcessStep number="04" title="Proje" active={processStatus==="AKTIF"||processStatus==="TAMAMLANDI"}/></div></section>
   <MeetingNotes projectId={project.id}/>
+  <Quotes projectId={project.id}/>
   <div className="mt-7 border-t border-neutral-300 pt-5"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-400">Son Güncelleme</p><p className="mt-2 text-xs text-neutral-500">{formatDate(project.updatedAt)}</p></div>
  </div></main>;
 }
