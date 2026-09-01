@@ -8,7 +8,7 @@ const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 type RouteContext = { params: Promise<{ id: string }> };
-const allowedStatuses = ["AKTIF", "BEKLEMEDE", "TAMAMLANDI", "IPTAL"];
+const allowedStatuses = ["AKTIF", "SOZLESME", "BEKLEMEDE", "TAMAMLANDI", "IPTAL"];
 
 export async function GET(_request: Request, { params }: RouteContext) {
   try {
