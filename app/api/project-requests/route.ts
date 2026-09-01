@@ -1,26 +1,5 @@
-import "dotenv/config";
-
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
-});
-
-const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+import { prisma } from "@/lib/prisma";
 
 const allowedSources = ["direct", "calculator", "collaboration"];
 
@@ -34,72 +13,27 @@ export async function GET() {
             id: true,
             projectNo: true,
             status: true,
-            quotes: {
-              select: { status: true, quoteDate: true },
-              orderBy: { quoteDate: "desc" },
-              take: 1,
-            },
-            meetingNotes: {
-              select: { meetingAt: true },
-              orderBy: { meetingAt: "desc" },
-              take: 1,
-            },
+            quotes: { select: { status: true, quoteDate: true }, orderBy: { quoteDate: "desc" }, take: 1 },
+            meetingNotes: { select: { meetingAt: true }, orderBy: { meetingAt: "desc" }, take: 1 },
           },
         },
       },
     });
-
     return NextResponse.json(projectRequests, { status: 200 });
   } catch (error) {
     console.error("Project requests GET error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Proje talepleri alınamadı.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: "Proje talepleri alınamadı." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { fullName, phone, province, district, neighborhood, buildingType, projectStage, approximateArea, interestAreas, description } = body;
+    const source = typeof body.source === "string" && allowedSources.includes(body.source.trim()) ? body.source.trim() : "direct";
 
-    const {
-      fullName,
-      phone,
-      province,
-      district,
-      neighborhood,
-      buildingType,
-      projectStage,
-      approximateArea,
-      interestAreas,
-      description,
-    } = body;
-
-    const source = typeof body.source === "string" && allowedSources.includes(body.source.trim())
-      ? body.source.trim()
-      : "direct";
-
-    if (
-      !fullName ||
-      !phone ||
-      !province ||
-      !district ||
-      !neighborhood ||
-      !buildingType ||
-      !projectStage
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Lütfen zorunlu alanları doldurun.",
-        },
-        { status: 400 }
-      );
+    if (!fullName || !phone || !province || !district || !neighborhood || !buildingType || !projectStage) {
+      return NextResponse.json({ success: false, message: "Lütfen zorunlu alanları doldurun." }, { status: 400 });
     }
 
     const projectRequest = await prisma.projectRequest.create({
@@ -112,9 +46,7 @@ export async function POST(request: Request) {
         buildingType: String(buildingType).trim(),
         projectStage: String(projectStage).trim(),
         approximateArea: approximateArea ? String(approximateArea).trim() : null,
-        interestAreas: Array.isArray(interestAreas)
-          ? interestAreas.map(String).map((value: string) => value.trim()).filter(Boolean).join(", ")
-          : String(interestAreas || "").trim(),
+        interestAreas: Array.isArray(interestAreas) ? interestAreas.map(String).map((value: string) => value.trim()).filter(Boolean).join(", ") : String(interestAreas || "").trim(),
         description: description ? String(description).trim() : null,
         status: "YENI",
         source,
@@ -122,23 +54,9 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Proje talebiniz başarıyla oluşturuldu.",
-        id: projectRequest.id,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, message: "Proje talebiniz başarıyla oluşturuldu.", id: projectRequest.id }, { status: 201 });
   } catch (error) {
     console.error("Project request create error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Veritabanına kayıt sırasında hata oluştu.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: "Veritabanına kayıt sırasında hata oluştu." }, { status: 500 });
   }
 }
