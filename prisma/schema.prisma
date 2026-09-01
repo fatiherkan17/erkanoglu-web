@@ -37,6 +37,7 @@ model Project {
   projectRequestId Int            @unique
   projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
   meetingNotes     MeetingNote[]
+  quotes           Quote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,4 +56,27 @@ model MeetingNote {
 
   @@index([projectId])
   @@index([meetingAt])
+}
+
+model Quote {
+  id             Int      @id @default(autoincrement())
+  projectId      Int
+  quoteNo        String   @unique
+  quoteDate      DateTime @default(now())
+  validUntil     DateTime?
+  scope          String
+  description    String?
+  subtotal       Int
+  vatRate        Int      @default(20)
+  total          Int
+  currency       String   @default("TRY")
+  status         String   @default("TASLAK")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([quoteDate])
+  @@index([status])
 }
