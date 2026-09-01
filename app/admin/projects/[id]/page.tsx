@@ -27,7 +27,7 @@ export default function ProjectDetailPage(){
   <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Müşterinin Açıklaması</p><div className="mt-5 border-t border-neutral-200 pt-5 text-sm leading-7 text-neutral-700">{request.description||"Açıklama bulunmuyor."}</div></section>
   <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Proje Süreci</p><div className="mt-6 grid gap-3 md:grid-cols-4"><ProcessStep number="01" title="Talep" active/><ProcessStep number="02" title="İnceleme" active={processStatus!=="AKTIF"||project.createdAt!==request.createdAt}/><ProcessStep number="03" title="Teklif" active={processStatus!=="BEKLEMEDE"&&processStatus!=="IPTAL"}/><ProcessStep number="04" title="Sözleşme / Proje" active={processStatus==="SOZLESME"||processStatus==="AKTIF"||processStatus==="TAMAMLANDI"}/></div></section>
   <MeetingNotes projectId={project.id}/>
-  <Quotes projectId={project.id} onProjectStatusChange={(status)=>setProject(current=>current?{...current,status,updatedAt:new Date().toISOString()}:current)}/>
+  <Quotes projectId={project.id} projectStatus={project.status} onProjectStatusChange={(status)=>setProject(current=>current?{...current,status,updatedAt:new Date().toISOString()}:current)}/>
   <div className="mt-7 border-t border-neutral-300 pt-5"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-400">Son Güncelleme</p><p className="mt-2 text-xs text-neutral-500">{formatDate(project.updatedAt)}</p></div>
  </div></main>;
 }
