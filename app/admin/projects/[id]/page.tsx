@@ -1,140 +1,34 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import MeetingNotes from "./MeetingNotes";
 
-type Project = {
-  id: number;
-  projectNo: string;
-  name: string | null;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  projectRequest: {
-    id: number;
-    fullName: string;
-    phone: string;
-    province: string;
-    district: string;
-    neighborhood: string;
-    buildingType: string;
-    projectStage: string;
-    approximateArea: string | null;
-    interestAreas: string;
-    description: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-};
+type Project = { id:number; projectNo:string; name:string|null; status:string; createdAt:string; updatedAt:string; projectRequest:{ id:number; fullName:string; phone:string; province:string; district:string; neighborhood:string; buildingType:string; projectStage:string; approximateArea:string|null; interestAreas:string; description:string|null; createdAt:string; updatedAt:string; } };
+const statusOptions=[{value:"AKTIF",label:"Aktif"},{value:"BEKLEMEDE",label:"Beklemede"},{value:"TAMAMLANDI",label:"Tamamlandı"},{value:"IPTAL",label:"İptal"}];
+const statusLabel=(status:string)=>statusOptions.find((item)=>item.value===status)?.label??status;
+const formatDate=(value:string)=>{const date=new Date(value);return Number.isNaN(date.getTime())?"-":date.toLocaleString("tr-TR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});};
 
-const statusOptions = [
-  { value: "AKTIF", label: "Aktif" },
-  { value: "BEKLEMEDE", label: "Beklemede" },
-  { value: "TAMAMLANDI", label: "Tamamlandı" },
-  { value: "IPTAL", label: "İptal" },
-];
-
-const statusLabel = (status: string) => statusOptions.find((item) => item.value === status)?.label ?? status;
-const formatDate = (value: string) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-};
-
-export default function ProjectDetailPage() {
-  const params = useParams();
-  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!id) return;
-    async function loadProject() {
-      try {
-        setLoading(true); setError("");
-        const response = await fetch(`/api/projects/${id}`, { cache: "no-store" });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "Proje alınamadı.");
-        setProject(result.data);
-      } catch (err) {
-        console.error("Project detail error:", err);
-        setError(err instanceof Error ? err.message : "Proje bilgileri alınamadı.");
-      } finally { setLoading(false); }
-    }
-    loadProject();
-  }, [id]);
-
-  async function updateStatus(status: string) {
-    if (!project || saving) return;
-    try {
-      setSaving(true); setError("");
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Durum güncellenemedi.");
-      setProject(result.data);
-    } catch (err) {
-      console.error("Project status error:", err);
-      setError(err instanceof Error ? err.message : "Durum güncellenemedi.");
-    } finally { setSaving(false); }
-  }
-
-  if (loading) return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-5xl"><p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Proje yükleniyor...</p></div></main>;
-
-  if (!project) return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-5xl"><Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← İşler / Projeler</Link><div className="mt-10 border border-neutral-300 bg-[#faf9f6] p-8"><p className="text-sm text-red-700">{error || "Proje bulunamadı."}</p></div></div></main>;
-
-  const request = project.projectRequest;
-  const processStatus = project.status;
-
-  return (
-    <main className="min-h-screen bg-[#f7f5f0] px-6 py-14">
-      <div className="mx-auto max-w-5xl">
-        <Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← İşler / Projeler</Link>
-
-        <div className="mt-10 flex items-end justify-between border-b border-neutral-300 pb-8">
-          <div><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Proje</p><h1 className="mt-3 text-4xl font-light tracking-tight">{request.fullName}</h1></div>
-          <div className="text-right"><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Proje No</p><p className="mt-2 text-xl">{project.projectNo}</p></div>
-        </div>
-
-        <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7">
-          <div className="flex items-center justify-between gap-8">
-            <div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Mevcut Durum</p><p className="mt-3 text-2xl font-light">{statusLabel(project.status)}</p></div>
-            <div className="w-64"><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Durumu Güncelle</label><select value={project.status} disabled={saving} onChange={(e) => updateStatus(e.target.value)} className="mt-2 w-full border border-neutral-500 bg-transparent px-4 py-3 text-sm outline-none"><option value="">Seçiniz</option>{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
-          </div>
-          {error && <p className="mt-5 text-xs text-red-700">{error}</p>}
-        </section>
-
-        <div className="mt-7 grid gap-7 md:grid-cols-2">
-          <InfoCard title="Müşteri Bilgileri"><InfoRow label="Ad Soyad" value={request.fullName}/><InfoRow label="Telefon" value={request.phone}/></InfoCard>
-          <InfoCard title="Proje Konumu"><InfoRow label="İl" value={request.province}/><InfoRow label="İlçe" value={request.district}/><InfoRow label="Mahalle / Köy" value={request.neighborhood}/></InfoCard>
-        </div>
-
-        <div className="mt-7 grid gap-7 md:grid-cols-2">
-          <InfoCard title="Yapı Bilgileri"><InfoRow label="Yapı Türü" value={request.buildingType}/><InfoRow label="Proje Aşaması" value={request.projectStage}/><InfoRow label="Yaklaşık Alan" value={request.approximateArea || "-"}/></InfoCard>
-          <InfoCard title="Talep Bilgileri"><InfoRow label="İlgilenilen Alanlar" value={request.interestAreas}/><InfoRow label="Talep Tarihi" value={formatDate(request.createdAt)}/></InfoCard>
-        </div>
-
-        <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Müşterinin Açıklaması</p><div className="mt-5 border-t border-neutral-200 pt-5 text-sm leading-7 text-neutral-700">{request.description || "Açıklama bulunmuyor."}</div></section>
-
-        <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7">
-          <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Proje Süreci</p>
-          <div className="mt-6 grid gap-3 md:grid-cols-4">
-            <ProcessStep number="01" title="Talep" active />
-            <ProcessStep number="02" title="İnceleme" active={processStatus !== "AKTIF" || project.createdAt !== request.createdAt} />
-            <ProcessStep number="03" title="Teklif" active={processStatus === "AKTIF" || processStatus === "TAMAMLANDI"} />
-            <ProcessStep number="04" title="Proje" active={processStatus === "AKTIF" || processStatus === "TAMAMLANDI"} />
-          </div>
-        </section>
-
-        <div className="mt-7 border-t border-neutral-300 pt-5"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-400">Son Güncelleme</p><p className="mt-2 text-xs text-neutral-500">{formatDate(project.updatedAt)}</p></div>
-      </div>
-    </main>
-  );
+export default function ProjectDetailPage(){
+ const params=useParams(); const id=Array.isArray(params?.id)?params.id[0]:params?.id;
+ const [project,setProject]=useState<Project|null>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
+ useEffect(()=>{if(!id)return;async function loadProject(){try{setLoading(true);setError("");const response=await fetch(`/api/projects/${id}`,{cache:"no-store"});const result=await response.json();if(!response.ok)throw new Error(result.message||"Proje alınamadı.");setProject(result.data);}catch(err){console.error("Project detail error:",err);setError(err instanceof Error?err.message:"Proje bilgileri alınamadı.");}finally{setLoading(false);}}loadProject();},[id]);
+ async function updateStatus(status:string){if(!project||saving)return;try{setSaving(true);setError("");const response=await fetch(`/api/projects/${project.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});const result=await response.json();if(!response.ok)throw new Error(result.message||"Durum güncellenemedi.");setProject(result.data);}catch(err){console.error("Project status error:",err);setError(err instanceof Error?err.message:"Durum güncellenemedi.");}finally{setSaving(false);}}
+ if(loading)return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-5xl"><p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Proje yükleniyor...</p></div></main>;
+ if(!project)return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-5xl"><Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← İşler / Projeler</Link><div className="mt-10 border border-neutral-300 bg-[#faf9f6] p-8"><p className="text-sm text-red-700">{error||"Proje bulunamadı."}</p></div></div></main>;
+ const request=project.projectRequest; const processStatus=project.status;
+ return <main className="min-h-screen bg-[#f7f5f0] px-6 py-14"><div className="mx-auto max-w-5xl">
+  <Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← İşler / Projeler</Link>
+  <div className="mt-10 flex items-end justify-between border-b border-neutral-300 pb-8"><div><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Proje</p><h1 className="mt-3 text-4xl font-light tracking-tight">{request.fullName}</h1></div><div className="text-right"><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Proje No</p><p className="mt-2 text-xl">{project.projectNo}</p></div></div>
+  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><div className="flex items-center justify-between gap-8"><div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Mevcut Durum</p><p className="mt-3 text-2xl font-light">{statusLabel(project.status)}</p></div><div className="w-64"><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Durumu Güncelle</label><select value={project.status} disabled={saving} onChange={(e)=>updateStatus(e.target.value)} className="mt-2 w-full border border-neutral-500 bg-transparent px-4 py-3 text-sm outline-none">{statusOptions.map((option)=><option key={option.value} value={option.value}>{option.label}</option>)}</select></div></div>{error&&<p className="mt-5 text-xs text-red-700">{error}</p>}</section>
+  <div className="mt-7 grid gap-7 md:grid-cols-2"><InfoCard title="Müşteri Bilgileri"><InfoRow label="Ad Soyad" value={request.fullName}/><InfoRow label="Telefon" value={request.phone}/></InfoCard><InfoCard title="Proje Konumu"><InfoRow label="İl" value={request.province}/><InfoRow label="İlçe" value={request.district}/><InfoRow label="Mahalle / Köy" value={request.neighborhood}/></InfoCard></div>
+  <div className="mt-7 grid gap-7 md:grid-cols-2"><InfoCard title="Yapı Bilgileri"><InfoRow label="Yapı Türü" value={request.buildingType}/><InfoRow label="Proje Aşaması" value={request.projectStage}/><InfoRow label="Yaklaşık Alan" value={request.approximateArea||"-"}/></InfoCard><InfoCard title="Talep Bilgileri"><InfoRow label="İlgilenilen Alanlar" value={request.interestAreas}/><InfoRow label="Talep Tarihi" value={formatDate(request.createdAt)}/></InfoCard></div>
+  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Müşterinin Açıklaması</p><div className="mt-5 border-t border-neutral-200 pt-5 text-sm leading-7 text-neutral-700">{request.description||"Açıklama bulunmuyor."}</div></section>
+  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Proje Süreci</p><div className="mt-6 grid gap-3 md:grid-cols-4"><ProcessStep number="01" title="Talep" active/><ProcessStep number="02" title="İnceleme" active={processStatus!=="AKTIF"||project.createdAt!==request.createdAt}/><ProcessStep number="03" title="Teklif" active={processStatus==="AKTIF"||processStatus==="TAMAMLANDI"}/><ProcessStep number="04" title="Proje" active={processStatus==="AKTIF"||processStatus==="TAMAMLANDI"}/></div></section>
+  <MeetingNotes projectId={project.id}/>
+  <div className="mt-7 border-t border-neutral-300 pt-5"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-400">Son Güncelleme</p><p className="mt-2 text-xs text-neutral-500">{formatDate(project.updatedAt)}</p></div>
+ </div></main>;
 }
-
-function InfoCard({ title, children }: { title: string; children: React.ReactNode }) { return <section className="border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">{title}</p><div className="mt-5">{children}</div></section>; }
-function InfoRow({ label, value }: { label: string; value: string }) { return <div className="flex justify-between gap-6 border-b border-neutral-200 py-4 last:border-b-0"><span className="text-[9px] uppercase tracking-[0.15em] text-neutral-500">{label}</span><span className="max-w-[65%] text-right text-sm text-neutral-800">{value || "-"}</span></div>; }
-function ProcessStep({ number, title, active }: { number: string; title: string; active: boolean }) { return <div className={`border p-5 ${active ? "border-neutral-500 bg-[#eee9dd]" : "border-neutral-200 bg-transparent"}`}><p className="text-[9px] tracking-[0.2em] text-neutral-500">{number}</p><p className="mt-3 text-sm">{title}</p></div>; }
+function InfoCard({title,children}:{title:string;children:React.ReactNode}){return <section className="border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">{title}</p><div className="mt-5">{children}</div></section>}
+function InfoRow({label,value}:{label:string;value:string}){return <div className="flex justify-between gap-6 border-b border-neutral-200 py-4 last:border-b-0"><span className="text-[9px] uppercase tracking-[0.15em] text-neutral-500">{label}</span><span className="max-w-[65%] text-right text-sm text-neutral-800">{value||"-"}</span></div>}
+function ProcessStep({number,title,active}:{number:string;title:string;active:boolean}){return <div className={`border p-5 ${active?"border-neutral-500 bg-[#eee9dd]":"border-neutral-200 bg-transparent"}`}><p className="text-[9px] tracking-[0.2em] text-neutral-500">{number}</p><p className="mt-3 text-sm">{title}</p></div>}
