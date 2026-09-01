@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 type ProjectRequest = {
   id: number;
@@ -14,511 +14,96 @@ type ProjectRequest = {
   projectStage: string;
   approximateArea: string | null;
   interestAreas: string;
-  description: string | null;
   status: string;
   createdAt: string;
-  updatedAt: string;
+  project?: { id: number; projectNo: string; status: string } | null;
 };
 
-const statusOptions = [
-  { value: "YENI", label: "Yeni" },
-  { value: "INCELENIYOR", label: "İnceleniyor" },
-  { value: "GORUSULDU", label: "Görüşüldü" },
-  {
-    value: "TEKLIF_HAZIRLANIYOR",
-    label: "Teklif Hazırlanıyor",
-  },
-  {
-    value: "TEKLIF_GONDERILDI",
-    label: "Teklif Gönderildi",
-  },
-  {
-    value: "ONAY_BEKLENIYOR",
-    label: "Onay Bekleniyor",
-  },
-  {
-    value: "PROJE_BASLADI",
-    label: "Proje Başladı",
-  },
-  {
-    value: "TAMAMLANDI",
-    label: "Tamamlandı",
-  },
-];
-
-const processSteps = [
-  { value: "YENI", label: "Talep" },
-  { value: "INCELENIYOR", label: "İnceleme" },
-  { value: "GORUSULDU", label: "Görüşme" },
-  { value: "TEKLIF_HAZIRLANIYOR", label: "Teklif" },
-  { value: "TEKLIF_GONDERILDI", label: "Teklif Gönderildi" },
-  { value: "ONAY_BEKLENIYOR", label: "Onay" },
-  { value: "PROJE_BASLADI", label: "Proje" },
-  { value: "TAMAMLANDI", label: "Tamamlandı" },
-];
-
-function statusLabel(status: string) {
-  return (
-    statusOptions.find((item) => item.value === status)?.label ??
-    status
-  );
-}
+const statusLabels: Record<string, string> = {
+  YENI: "Yeni",
+  INCELENIYOR: "İnceleniyor",
+  GORUSME_YAPILDI: "Görüşme Yapıldı",
+  TEKLIF_HAZIRLANIYOR: "Teklif Hazırlanıyor",
+  TEKLIF_GONDERILDI: "Teklif Gönderildi",
+  KAZANILDI: "Kazanıldı",
+  KAYBEDILDI: "Kaybedildi",
+  PROJE_OLUSTURULDU: "Projeye Dönüştürüldü",
+};
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("tr-TR", {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("tr-TR", {
     day: "2-digit",
-    month: "long",
+    month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
-function InfoRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number | null | undefined;
-}) {
-  return (
-    <div className="grid grid-cols-[135px_1fr] border-b border-[#ddd8ce] py-4 last:border-b-0">
-      <span className="text-[9px] uppercase tracking-[0.18em] text-[#918a7e]">
-        {label}
-      </span>
-
-      <span className="text-sm text-[#282621]">
-        {value || "-"}
-      </span>
-    </div>
-  );
-}
-
-export default function ProjectRequestDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
-
-  const [projectRequest, setProjectRequest] =
-    useState<ProjectRequest | null>(null);
-
-  const [selectedStatus, setSelectedStatus] = useState("");
+export default function ProjectRequestsPage() {
+  const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadRequest() {
+    async function loadRequests() {
       try {
         setLoading(true);
         setError("");
-
-        const response = await fetch(
-          `/api/project-requests/${id}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Proje talebi alınamadı.");
-        }
-
-        const data = await response.json();
-
-        const request =
-          data.projectRequest ??
-          data.request ??
-          data.data ??
-          data;
-
-        setProjectRequest(request);
-        setSelectedStatus(request.status);
-      } catch (error) {
-        console.error(error);
-        setError("Proje talebi alınamadı.");
+        const response = await fetch("/api/project-requests", { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.message || "Proje talepleri alınamadı.");
+        const data = Array.isArray(result) ? result : result?.data ?? result?.projectRequests ?? [];
+        setRequests(data);
+      } catch (err) {
+        console.error("Project requests list error:", err);
+        setError(err instanceof Error ? err.message : "Proje talepleri alınamadı.");
       } finally {
         setLoading(false);
       }
     }
-
-    if (id) {
-      loadRequest();
-    }
-  }, [id]);
-
-  async function updateStatus(
-    newStatus: string
-  ) {
-    if (!projectRequest) return;
-
-    setSelectedStatus(newStatus);
-
-    if (newStatus === projectRequest.status) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError("");
-
-      const response = await fetch(
-        `/api/project-requests/${projectRequest.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: newStatus,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Durum güncellenemedi.");
-      }
-
-      const data = await response.json();
-
-      const updatedRequest =
-        data.projectRequest ??
-        data.request ??
-        data.data ??
-        data;
-
-      setProjectRequest(updatedRequest);
-      setSelectedStatus(updatedRequest.status);
-    } catch (error) {
-      console.error(error);
-      setError("Durum güncellenemedi.");
-      setSelectedStatus(projectRequest.status);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#f5f2eb] px-6 py-16">
-        <div className="mx-auto max-w-[960px]">
-          <p className="text-sm text-[#777064]">
-            Proje talebi yükleniyor...
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!projectRequest) {
-    return (
-      <main className="min-h-screen bg-[#f5f2eb] px-6 py-16">
-        <div className="mx-auto max-w-[960px]">
-          <p className="text-sm text-red-700">
-            {error || "Proje talebi bulunamadı."}
-          </p>
-
-          <Link
-            href="/admin/project-requests"
-            className="mt-6 inline-block text-[10px] uppercase tracking-[0.2em]"
-          >
-            ← Taleplere Dön
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  const currentStepIndex = processSteps.findIndex(
-    (step) => step.value === projectRequest.status
-  );
+    loadRequests();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-[#f5f2eb] text-[#171717]">
-      <div className="mx-auto max-w-[960px] px-6 py-12">
-
-        {/* HEADER */}
-
-        <div className="mb-8 border-b border-[#d8d3c8] pb-8">
-          <Link
-            href="/admin/project-requests"
-            className="mb-8 block text-[10px] uppercase tracking-[0.22em] text-[#7e776b]"
-          >
-            ← Proje Talepleri
-          </Link>
-
-          <div className="flex items-end justify-between">
+    <main className="min-h-screen bg-[#f5f2eb] text-[#171717] px-6 py-12 md:px-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="border-b border-[#d8d3c8] pb-8">
+          <p className="text-[9px] uppercase tracking-[0.25em] text-[#8d8579]">Erkanoğlu Yönetim</p>
+          <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="mb-3 text-[9px] uppercase tracking-[0.25em] text-[#8d8579]">
-                Proje Talebi
-              </p>
-
-              <h1 className="text-[42px] font-light tracking-[-0.04em]">
-                {projectRequest.fullName}
-              </h1>
+              <h1 className="text-4xl font-light tracking-[-0.04em]">Proje Talepleri</h1>
+              <p className="mt-3 text-sm text-[#777064]">Web sitesinden gelen proje taleplerini yönetin.</p>
             </div>
+            <Link href="/admin/projects" className="border border-[#aaa398] px-5 py-3 text-[10px] uppercase tracking-[0.18em] hover:bg-black hover:text-white">Projeler →</Link>
+          </div>
+        </div>
 
-            <div className="text-right">
-              <p className="text-[9px] uppercase tracking-[0.2em] text-[#8d8579]">
-                Talep No
-              </p>
+        {loading && <div className="py-16 text-sm text-[#777064]">Proje talepleri yükleniyor...</div>}
+        {!loading && error && <div className="mt-8 border border-red-300 bg-red-50 p-5 text-sm text-red-800">{error}</div>}
 
-              <p className="mt-2 text-xl font-light">
-                #{projectRequest.id}
-              </p>
+        {!loading && !error && requests.length === 0 && (
+          <div className="mt-8 border border-[#d8d3c8] bg-[#f8f5ef] p-8 text-sm text-[#777064]">Henüz proje talebi bulunmuyor.</div>
+        )}
+
+        {!loading && !error && requests.length > 0 && (
+          <div className="mt-8 overflow-hidden border border-[#d8d3c8] bg-[#f8f5ef]">
+            <div className="hidden grid-cols-[1.5fr_1fr_1fr_1fr_auto] border-b border-[#d8d3c8] px-6 py-4 text-[9px] uppercase tracking-[0.18em] text-[#8d8579] md:grid">
+              <span>Müşteri</span><span>Konum</span><span>Yapı</span><span>Durum</span><span></span>
             </div>
+            {requests.map((request) => (
+              <Link key={request.id} href={`/admin/project-requests/${request.id}`} className="grid gap-4 border-b border-[#ddd8ce] px-6 py-6 transition hover:bg-[#eee9df] last:border-b-0 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto] md:items-center">
+                <div><p className="text-base">{request.fullName}</p><p className="mt-1 text-xs text-[#8d8579]">#{request.id} · {formatDate(request.createdAt)}</p></div>
+                <div><p className="text-sm">{request.province} / {request.district}</p><p className="mt-1 text-xs text-[#8d8579]">{request.neighborhood}</p></div>
+                <div><p className="text-sm">{request.buildingType}</p><p className="mt-1 text-xs text-[#8d8579]">{request.approximateArea ? `${request.approximateArea} m²` : "Alan belirtilmedi"}</p></div>
+                <div><span className="inline-flex border border-[#c9c2b6] px-3 py-2 text-[9px] uppercase tracking-[0.12em]">{request.project ? request.project.projectNo : statusLabels[request.status] ?? request.status}</span></div>
+                <span className="text-lg text-[#777064]">→</span>
+              </Link>
+            ))}
           </div>
-        </div>
-
-        {/* STATUS */}
-
-        <section className="mb-7 grid border border-[#d8d3c8] bg-[#f8f5ef] md:grid-cols-2">
-
-          <div className="p-7 md:border-r border-[#d8d3c8]">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-[#8d8579]">
-              Mevcut Durum
-            </p>
-
-            <p className="mt-3 text-2xl font-light">
-              {statusLabel(projectRequest.status)}
-            </p>
-          </div>
-
-          <div className="p-7">
-            <label
-              htmlFor="status"
-              className="block text-[9px] uppercase tracking-[0.2em] text-[#8d8579]"
-            >
-              Durumu Güncelle
-            </label>
-
-            <select
-              id="status"
-              value={selectedStatus}
-              disabled={saving}
-              onChange={(event) =>
-                updateStatus(event.target.value)
-              }
-              className="mt-3 w-full border border-[#aaa398] bg-[#f8f5ef] px-4 py-3 text-sm outline-none focus:border-black"
-            >
-              {statusOptions.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            {saving && (
-              <p className="mt-2 text-[9px] uppercase tracking-[0.15em] text-[#8b8478]">
-                Kaydediliyor...
-              </p>
-            )}
-
-            {error && (
-              <p className="mt-2 text-xs text-red-700">
-                {error}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* PROJE SÜRECİ */}
-
-        <section className="mb-7 border border-[#d8d3c8] bg-[#f8f5ef]">
-
-          <div className="border-b border-[#d8d3c8] px-7 py-6">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-[#8d8579]">
-              Proje Süreci
-            </p>
-
-            <h2 className="mt-2 text-xl font-light">
-              İşin mevcut aşaması
-            </h2>
-          </div>
-
-          <div className="overflow-x-auto px-7 py-8">
-            <div className="flex min-w-[760px] items-start">
-
-              {processSteps.map((step, index) => {
-                const completed =
-                  currentStepIndex >= 0 &&
-                  index < currentStepIndex;
-
-                const active =
-                  index === currentStepIndex;
-
-                return (
-                  <div
-                    key={step.value}
-                    className="flex flex-1 items-start"
-                  >
-                    <div className="flex min-w-[80px] flex-col items-center">
-
-                      <div
-                        className={[
-                          "flex h-9 w-9 items-center justify-center border text-[10px]",
-                          completed
-                            ? "border-black bg-black text-white"
-                            : active
-                            ? "border-[#b89a55] bg-[#ead9a7] text-[#3c321d]"
-                            : "border-[#cec8bc] bg-[#f8f5ef] text-[#999185]",
-                        ].join(" ")}
-                      >
-                        {completed ? "✓" : index + 1}
-                      </div>
-
-                      <p
-                        className={[
-                          "mt-3 whitespace-nowrap text-center text-[9px] uppercase tracking-[0.1em]",
-                          active
-                            ? "font-medium text-black"
-                            : "text-[#8d8579]",
-                        ].join(" ")}
-                      >
-                        {step.label}
-                      </p>
-                    </div>
-
-                    {index < processSteps.length - 1 && (
-                      <div
-                        className={[
-                          "mt-[18px] h-px flex-1",
-                          completed
-                            ? "bg-black"
-                            : "bg-[#d8d3c8]",
-                        ].join(" ")}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-
-            </div>
-          </div>
-        </section>
-
-        {/* BİLGİLER */}
-
-        <div className="grid gap-7 md:grid-cols-2">
-
-          <section className="border border-[#d8d3c8] bg-[#f8f5ef] p-7">
-            <p className="mb-5 text-[9px] uppercase tracking-[0.22em] text-[#8d8579]">
-              Müşteri Bilgileri
-            </p>
-
-            <InfoRow
-              label="Ad Soyad"
-              value={projectRequest.fullName}
-            />
-
-            <InfoRow
-              label="Telefon"
-              value={projectRequest.phone}
-            />
-          </section>
-
-          <section className="border border-[#d8d3c8] bg-[#f8f5ef] p-7">
-            <p className="mb-5 text-[9px] uppercase tracking-[0.22em] text-[#8d8579]">
-              Proje Konumu
-            </p>
-
-            <InfoRow
-              label="İl"
-              value={projectRequest.province}
-            />
-
-            <InfoRow
-              label="İlçe"
-              value={projectRequest.district}
-            />
-
-            <InfoRow
-              label="Mahalle / Köy"
-              value={projectRequest.neighborhood}
-            />
-          </section>
-
-        </div>
-
-        <div className="mt-7 grid gap-7 md:grid-cols-2">
-
-          <section className="border border-[#d8d3c8] bg-[#f8f5ef] p-7">
-            <p className="mb-5 text-[9px] uppercase tracking-[0.22em] text-[#8d8579]">
-              Yapı Bilgileri
-            </p>
-
-            <InfoRow
-              label="Yapı Türü"
-              value={projectRequest.buildingType}
-            />
-
-            <InfoRow
-              label="Proje Aşaması"
-              value={projectRequest.projectStage}
-            />
-
-            <InfoRow
-              label="Yaklaşık Alan"
-              value={
-                projectRequest.approximateArea
-                  ? `${projectRequest.approximateArea} m²`
-                  : "-"
-              }
-            />
-          </section>
-
-          <section className="border border-[#d8d3c8] bg-[#f8f5ef] p-7">
-            <p className="mb-5 text-[9px] uppercase tracking-[0.22em] text-[#8d8579]">
-              Talep Bilgileri
-            </p>
-
-            <InfoRow
-              label="İlgilenilen Alanlar"
-              value={projectRequest.interestAreas}
-            />
-
-            <InfoRow
-              label="Talep Tarihi"
-              value={formatDate(projectRequest.createdAt)}
-            />
-          </section>
-
-        </div>
-
-        {/* AÇIKLAMA */}
-
-        <section className="mt-7 border border-[#d8d3c8] bg-[#f8f5ef] p-7">
-          <p className="mb-5 text-[9px] uppercase tracking-[0.22em] text-[#8d8579]">
-            Müşterinin Açıklaması
-          </p>
-
-          <div className="border-t border-[#ddd8ce] pt-5 text-sm leading-7 text-[#403c35]">
-            {projectRequest.description ||
-              "Açıklama bulunmuyor."}
-          </div>
-        </section>
-
-        {/* FOOTER */}
-
-        <div className="mt-8 flex justify-between border-t border-[#d8d3c8] pt-6">
-          <Link
-            href="/admin/project-requests"
-            className="text-[9px] uppercase tracking-[0.18em] text-[#70695e]"
-          >
-            ← Tüm Talepler
-          </Link>
-
-          <p className="text-[9px] uppercase tracking-[0.18em] text-[#999185]">
-            Güncellendi:{" "}
-            {formatDate(projectRequest.updatedAt)}
-          </p>
-        </div>
-
+        )}
       </div>
     </main>
   );
