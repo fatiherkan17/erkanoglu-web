@@ -36,7 +36,23 @@ model Project {
 
   projectRequestId Int            @unique
   projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
+  meetingNotes     MeetingNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MeetingNote {
+  id         Int      @id @default(autoincrement())
+  projectId  Int
+  type       String   @default("YUZ_YUZE")
+  note       String
+  meetingAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([meetingAt])
 }
