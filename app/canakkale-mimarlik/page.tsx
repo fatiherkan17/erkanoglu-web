@@ -1,0 +1,11 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Çanakkale Mimarlık | Erkanoğlu",
+  description: "Çanakkale'de konut, villa ve ticari yapılar için mimari tasarım, ruhsat ve mühendislik hizmetleri.",
+};
+
+export default function CanakkaleMimarlikPage() {
+  return <main className="min-h-screen bg-[#f4f2ed] text-[#171717]"><header className="border-b border-black/10"><div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10"><Link href="/" className="text-xl font-semibold tracking-[0.2em]">ERKANOĞLU</Link><Link href="/proje-talebi" className="rounded-full bg-black px-5 py-3 text-sm text-white">Teklif Al →</Link></div></header><section className="mx-auto max-w-5xl px-6 py-24 lg:px-10 lg:py-32"><p className="text-xs uppercase tracking-[0.3em] text-black/40">Çanakkale Mimarlık</p><h1 className="mt-6 text-5xl font-medium leading-[0.95] tracking-[-0.05em] md:text-8xl">Fikri, doğru<br /><span className="text-black/35">yapıya dönüştürelim.</span></h1><p className="mt-10 max-w-3xl text-xl leading-8 text-black/55">Çanakkale ve çevresinde konut, villa, ticari ve mevcut yapılar için mimari tasarım ile mühendislik süreçlerini birlikte yürütüyoruz.</p><div className="mt-14 grid gap-6 md:grid-cols-3"><div className="border-t border-black/15 pt-5"><b>Mimari tasarım</b><p className="mt-3 text-sm leading-6 text-black/55">İhtiyaç, arsa ve bütçeye göre tasarım.</p></div><div className="border-t border-black/15 pt-5"><b>Ruhsat süreci</b><p className="mt-3 text-sm leading-6 text-black/55">Gerekli proje disiplinlerinin koordinasyonu.</p></div><div className="border-t border-black/15 pt-5"><b>Mühendislik</b><p className="mt-3 text-sm leading-6 text-black/55">Uygulanabilir ve güvenli teknik çözüm.</p></div></div><div className="mt-16 bg-[#171717] p-8 text-white md:p-12"><h2 className="text-3xl font-medium md:text-5xl">Projeniz hazır mı?</h2><p className="mt-5 max-w-xl text-white/55">Alan, yapı tipi ve bütçenizi paylaşın. Ön değerlendirme için sizinle iletişime geçelim.</p><Link href="/proje-talebi" className="mt-8 inline-flex rounded-full bg-white px-7 py-4 text-sm font-medium text-black">Proje Talebi Oluştur →</Link></div></section></main>;
+}
