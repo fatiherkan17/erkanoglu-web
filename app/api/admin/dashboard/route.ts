@@ -9,6 +9,7 @@ const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 const leadStatuses = ["YENI", "INCELENIYOR", "GORUSME_YAPILDI", "TEKLIF_HAZIRLANIYOR", "TEKLIF_GONDERILDI", "KAZANILDI", "KAYBEDILDI", "PROJE_OLUSTURULDU"];
+const priorityRank: Record<string, number> = { ACIL: 0, YUKSEK: 1, NORMAL: 2, DUSUK: 3 };
 
 export async function GET() {
   try {
@@ -23,7 +24,7 @@ export async function GET() {
       followUpsDue,
       projectCount,
       latestLeads,
-      dueLeads,
+      dueLeadsRaw,
     ] = await Promise.all([
       prisma.projectRequest.count(),
       prisma.projectRequest.count({ where: { status: "YENI" } }),
@@ -54,8 +55,8 @@ export async function GET() {
           nextFollowUpAt: { lte: now },
           status: { notIn: ["KAYBEDILDI", "PROJE_OLUSTURULDU"] },
         },
-        orderBy: [{ priority: "desc" }, { nextFollowUpAt: "asc" }],
-        take: 8,
+        orderBy: { nextFollowUpAt: "asc" },
+        take: 20,
         select: {
           id: true,
           fullName: true,
@@ -67,6 +68,14 @@ export async function GET() {
         },
       }),
     ]);
+
+    const dueLeads = [...dueLeadsRaw]
+      .sort((a, b) => {
+        const priorityDifference = (priorityRank[a.priority] ?? 99) - (priorityRank[b.priority] ?? 99);
+        if (priorityDifference !== 0) return priorityDifference;
+        return new Date(a.nextFollowUpAt ?? 0).getTime() - new Date(b.nextFollowUpAt ?? 0).getTime();
+      })
+      .slice(0, 8);
 
     return NextResponse.json({
       success: true,
