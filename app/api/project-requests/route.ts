@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
@@ -22,12 +22,30 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
+const allowedSources = ["direct", "calculator", "collaboration"];
 
 export async function GET() {
   try {
     const projectRequests = await prisma.projectRequest.findMany({
-      orderBy: {
-        createdAt: "desc",
+      orderBy: { createdAt: "desc" },
+      include: {
+        project: {
+          select: {
+            id: true,
+            projectNo: true,
+            status: true,
+            quotes: {
+              select: { status: true, quoteDate: true },
+              orderBy: { quoteDate: "desc" },
+              take: 1,
+            },
+            meetingNotes: {
+              select: { meetingAt: true },
+              orderBy: { meetingAt: "desc" },
+              take: 1,
+            },
+          },
+        },
       },
     });
 
@@ -44,11 +62,10 @@ export async function GET() {
     );
   }
 }
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
-    console.log("PROJECT REQUEST BODY:", body);
 
     const {
       fullName,
@@ -63,6 +80,10 @@ export async function POST(request: Request) {
       description,
     } = body;
 
+    const source = typeof body.source === "string" && allowedSources.includes(body.source.trim())
+      ? body.source.trim()
+      : "direct";
+
     if (
       !fullName ||
       !phone ||
@@ -75,7 +96,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "LÃ¼tfen zorunlu alanlarÄ± doldurun.",
+          message: "Lütfen zorunlu alanları doldurun.",
         },
         { status: 400 }
       );
@@ -83,62 +104,39 @@ export async function POST(request: Request) {
 
     const projectRequest = await prisma.projectRequest.create({
       data: {
-        fullName: String(fullName),
-        phone: String(phone),
-
-        province: String(province),
-        district: String(district),
-        neighborhood: String(neighborhood),
-
-        buildingType: String(buildingType),
-        projectStage: String(projectStage),
-
-        approximateArea: approximateArea
-          ? String(approximateArea)
-          : null,
-
+        fullName: String(fullName).trim(),
+        phone: String(phone).trim(),
+        province: String(province).trim(),
+        district: String(district).trim(),
+        neighborhood: String(neighborhood).trim(),
+        buildingType: String(buildingType).trim(),
+        projectStage: String(projectStage).trim(),
+        approximateArea: approximateArea ? String(approximateArea).trim() : null,
         interestAreas: Array.isArray(interestAreas)
-          ? interestAreas.map(String).join(", ")
-          : "",
-
-        description: description
-          ? String(description)
-          : null,
-
+          ? interestAreas.map(String).map((value: string) => value.trim()).filter(Boolean).join(", ")
+          : String(interestAreas || "").trim(),
+        description: description ? String(description).trim() : null,
         status: "YENI",
+        source,
+        priority: "NORMAL",
       },
     });
-
-    console.log(
-      "PROJECT REQUEST CREATED:",
-      projectRequest
-    );
 
     return NextResponse.json(
       {
         success: true,
-        message:
-          "Proje talebiniz baÅŸarÄ±yla oluÅŸturuldu.",
+        message: "Proje talebiniz başarıyla oluşturuldu.",
         id: projectRequest.id,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error(
-      "PROJECT REQUEST PRISMA ERROR:",
-      error
-    );
+    console.error("Project request create error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "VeritabanÄ±na kayÄ±t sÄ±rasÄ±nda hata oluÅŸtu.",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : undefined,
+        message: "Veritabanına kayıt sırasında hata oluştu.",
       },
       { status: 500 }
     );
