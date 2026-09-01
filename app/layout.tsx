@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "Erkanoğlu | Mimarlık · Mühendislik · İnşaat · Yaşam Alanları",
   description: "Erkanoğlu; mimarlık, mühendislik, inşaat ve yaşam alanlarını tek merkezde buluşturur. Çanakkale ve çevresinde proje, mühendislik ve yapım çözümleri.",
   keywords: ["Erkanoğlu", "Erkanoğlu Mühendislik", "Çanakkale mühendislik", "Çanakkale inşaat", "statik proje", "mimari proje", "villa proje", "anahtar teslim inşaat"],
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+  },
   openGraph: {
     title: "Erkanoğlu | Projeden Yaşam Alanına",
     description: "Mimarlık, mühendislik, inşaat ve yaşam alanları tek merkezde.",
