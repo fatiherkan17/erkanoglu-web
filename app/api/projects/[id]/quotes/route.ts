@@ -122,9 +122,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     const statusChanged = data.status !== undefined && data.status !== quote.status;
     const updated = await prisma.$transaction(async tx => {
-      const saved = await tx.quote.update({ where: { id: quoteId }, data, include: { statusHistory: { orderBy: { changedAt: "desc" } } } });
+      await tx.quote.update({ where: { id: quoteId }, data });
       if (statusChanged) await tx.quoteStatusHistory.create({ data: { quoteId, fromStatus: quote.status, toStatus: data.status! } });
-      return saved;
+      return tx.quote.findUniqueOrThrow({ where: { id: quoteId }, include: { statusHistory: { orderBy: { changedAt: "desc" } } } });
     });
     return NextResponse.json({ success: true, message: "Teklif güncellendi.", data: updated });
   } catch (error) {
