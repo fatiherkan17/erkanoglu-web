@@ -16,10 +16,10 @@ model ProjectRequest {
   neighborhood String
 
   buildingType    String
-  projectStage   String
+  projectStage    String
   approximateArea String?
-  interestAreas  String
-  description    String?
+  interestAreas   String
+  description     String?
 
   status         String    @default("YENI")
   source         String    @default("direct")
@@ -29,7 +29,8 @@ model ProjectRequest {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  project Project?
+  project      Project?
+  meetingNotes MeetingNote[]
 }
 
 model Project {
@@ -55,17 +56,20 @@ model Project {
 }
 
 model MeetingNote {
-  id         Int      @id @default(autoincrement())
-  projectId  Int
-  type       String   @default("YUZ_YUZE")
-  note       String
-  meetingAt  DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  projectId        Int?
+  projectRequestId Int?
+  type             String   @default("YUZ_YUZE")
+  note             String
+  meetingAt        DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project        Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectRequest ProjectRequest? @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([projectRequestId])
   @@index([meetingAt])
 }
 
