@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { trackEvent } from "../components/Analytics";
 
 function ProjeTalebiContent() {
   const searchParams = useSearchParams();
@@ -15,6 +16,12 @@ function ProjeTalebiContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    trackEvent("project_inquiry_start", {
+      source: searchParams.get("projectType") ? "calculator" : "direct",
+    });
+  }, [searchParams]);
 
   function update(field: string, value: string) { setForm((current) => ({ ...current, [field]: value })); }
 
@@ -30,6 +37,7 @@ function ProjeTalebiContent() {
         description: `E-posta: ${form.email || "Belirtilmedi"}\nZamanlama: ${form.timeline || "Belirtilmedi"}\nBütçe: ${form.budget || "Belirtilmedi"}\n\n${form.description}`.trim(),
       }) });
       if (!response.ok) throw new Error("Talep gönderilemedi.");
+      trackEvent("project_inquiry_submit", { project_type: form.projectType });
       setSuccess(true);
     } catch { setError("Talebiniz gönderilirken bir sorun oluştu. Lütfen tekrar deneyin."); }
     finally { setLoading(false); }
@@ -37,7 +45,7 @@ function ProjeTalebiContent() {
 
   if (success) return <main className="min-h-screen bg-[#f4f2ed] text-[#171717]"><header className="border-b border-black/10"><div className="mx-auto flex h-20 max-w-7xl items-center px-6 lg:px-10"><Link href="/" className="text-xl font-semibold tracking-[0.2em]">ERKANOĞLU</Link></div></header><section className="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center px-6 lg:px-10"><div className="max-w-3xl"><span className="text-xs uppercase tracking-[0.3em] text-black/35">Talebiniz alındı</span><h1 className="mt-7 text-5xl font-medium leading-[0.95] tracking-[-0.05em] md:text-7xl">Projenizin ilk<br />adımını attınız.</h1><p className="mt-8 max-w-xl text-lg leading-8 text-black/55">Bilgilerinizi aldık. Projenizi değerlendirdikten sonra sizinle iletişime geçeceğiz.</p><Link href="/" className="mt-10 inline-flex rounded-full bg-black px-7 py-4 text-sm text-white">Ana Sayfaya Dön →</Link></div></section></main>;
 
-  return <main className="min-h-screen bg-[#f4f2ed] text-[#171717]"><header className="border-b border-black/10"><div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10"><Link href="/" className="text-xl font-semibold tracking-[0.2em]">ERKANOĞLU</Link><span className="text-sm text-black/40">Proje Başlangıcı</span></div></header><section className="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-28"><div className="grid gap-16 lg:grid-cols-[0.75fr_1.25fr]"><div><span className="text-xs uppercase tracking-[0.3em] text-black/35">Projenizi anlatın</span><h1 className="mt-6 text-5xl font-medium leading-[0.95] tracking-[-0.05em] md:text-7xl">Birlikte<br />başlayalım.</h1><p className="mt-8 max-w-md text-lg leading-8 text-black/55">Henüz her şeyi bilmenize gerek yok. Projenizi mümkün olduğunca kısaca anlatın; ilk değerlendirmeyi birlikte yapalım.</p><div className="mt-12 border-t border-black/10 pt-6 text-sm text-black/45">Mimarlık · Mühendislik · Ruhsat · Yapı</div></div><div className="bg-white p-7 md:p-10 lg:p-14"><div className="grid gap-7">
+  return <main className="min-h-screen bg-[#f4f2ed] text-[#171717]"><header className="border-b border-black/10"><div className="mx-auto flex h-20 items-center justify-between border-black/10 px-6 lg:px-10"><Link href="/" className="text-xl font-semibold tracking-[0.2em]">ERKANOĞLU</Link><span className="text-sm text-black/40">Proje Başlangıcı</span></div></header><section className="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-28"><div className="grid gap-16 lg:grid-cols-[0.75fr_1.25fr]"><div><span className="text-xs uppercase tracking-[0.3em] text-black/35">Projenizi anlatın</span><h1 className="mt-6 text-5xl font-medium leading-[0.95] tracking-[-0.05em] md:text-7xl">Birlikte<br />başlayalım.</h1><p className="mt-8 max-w-md text-lg leading-8 text-black/55">Henüz her şeyi bilmenize gerek yok. Projenizi mümkün olduğunca kısaca anlatın; ilk değerlendirmeyi birlikte yapalım.</p><div className="mt-12 border-t border-black/10 pt-6 text-sm text-black/45">Mimarlık · Mühendislik · Ruhsat · Yapı</div></div><div className="bg-white p-7 md:p-10 lg:p-14"><div className="grid gap-7">
     <div><label className="mb-2 block text-sm font-medium">Ad Soyad *</label><input value={form.fullName} onChange={(e)=>update("fullName",e.target.value)} placeholder="Adınız Soyadınız" className="w-full border border-black/15 bg-[#faf9f6] px-5 py-4 outline-none focus:border-black" /></div>
     <div className="grid gap-7 md:grid-cols-2"><div><label className="mb-2 block text-sm font-medium">Telefon *</label><input type="tel" inputMode="tel" value={form.phone} onChange={(e)=>update("phone",e.target.value)} placeholder="05XX XXX XX XX" className="w-full border border-black/15 bg-[#faf9f6] px-5 py-4 outline-none focus:border-black" /></div><div><label className="mb-2 block text-sm font-medium">E-posta</label><input type="email" value={form.email} onChange={(e)=>update("email",e.target.value)} placeholder="ornek@mail.com" className="w-full border border-black/15 bg-[#faf9f6] px-5 py-4 outline-none focus:border-black" /></div></div>
     <div><label className="mb-2 block text-sm font-medium">Ne yapmak istiyorsunuz? *</label><select value={form.projectType} onChange={(e)=>update("projectType",e.target.value)} className="w-full border border-black/15 bg-[#faf9f6] px-5 py-4 outline-none focus:border-black"><option value="">Seçiniz</option><option value="Villa / Müstakil Ev">Villa / Müstakil Ev</option><option value="Konut">Konut</option><option value="Ticari Yapı">Ticari Yapı</option><option value="Apartman">Apartman</option><option value="Ruhsat Projesi">Ruhsat Projesi</option><option value="Mevcut Yapı">Mevcut Yapı</option><option value="Tadilat / Dönüşüm">Tadilat / Dönüşüm</option><option value="Diğer">Diğer</option></select></div>
