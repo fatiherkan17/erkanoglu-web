@@ -51,13 +51,17 @@ export default function FollowUpsPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function patchLead(id: number, payload: Record<string, unknown>, message: string) {
+  async function followUpAction(id: number, action: "complete" | "reschedule", nextFollowUpAt?: string, message?: string) {
     try {
       setWorkingId(id); setError(""); setSuccess("");
-      const response = await fetch(`/api/project-requests/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const response = await fetch(`/api/project-requests/${id}/follow-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, nextFollowUpAt }),
+      });
       const result = await response.json();
       if (!response.ok) throw new Error(result?.message || "Takip güncellenemedi.");
-      setSuccess(message);
+      setSuccess(message || result.message || "Takip güncellendi.");
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Takip güncellenemedi.");
@@ -65,13 +69,13 @@ export default function FollowUpsPage() {
   }
 
   function completeFollowUp(lead: Lead) {
-    patchLead(lead.id, { lastContactAt: new Date().toISOString(), nextFollowUpAt: null }, `${lead.fullName} için takip tamamlandı.`);
+    void followUpAction(lead.id, "complete", undefined, `${lead.fullName} için takip tamamlandı.`);
   }
 
   function snooze(lead: Lead, days: number) {
     const date = new Date();
     date.setDate(date.getDate() + days);
-    patchLead(lead.id, { nextFollowUpAt: localInput(date) }, `${lead.fullName} için takip ${days} gün sonrasına alındı.`);
+    void followUpAction(lead.id, "reschedule", localInput(date), `${lead.fullName} için takip ${days} gün sonrasına alındı.`);
   }
 
   return (
