@@ -20,7 +20,7 @@ export default function CollaborationPage() {
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-7 lg:px-10">
           <Link href="/" className="text-lg font-semibold tracking-[0.2em]">ERKANOĞLU</Link>
-          <Link href="/proje-talebi" className="rounded-full bg-[#151515] px-5 py-3 text-sm text-white">Projenizi Anlatın →</Link>
+          <Link href="/proje-talebi?source=collaboration" className="rounded-full bg-[#151515] px-5 py-3 text-sm text-white">Projenizi Anlatın →</Link>
         </div>
       </header>
 
@@ -60,7 +60,7 @@ export default function CollaborationPage() {
           <div>
             <h2 className="max-w-4xl text-4xl font-medium leading-[1.05] tracking-[-0.045em] md:text-6xl">Projeniz, uzmanlığınız veya çözümünüz varsa konuşalım.</h2>
             <p className="mt-8 max-w-2xl text-lg leading-8 text-black/55">İş birliği tekliflerini değerlendirmek için kapsamı, uzmanlık alanınızı ve birlikte geliştirebileceğimiz fikri paylaşabilirsiniz.</p>
-            <a href="mailto:info@erkanoglu.com.tr" className="mt-10 inline-flex rounded-full bg-[#151515] px-7 py-4 text-sm text-white">İş birliği teklifinizi gönderin →</a>
+            <Link href="/proje-talebi?source=collaboration" className="mt-10 inline-flex rounded-full bg-[#151515] px-7 py-4 text-sm text-white">İş birliği teklifinizi gönderin →</Link>
           </div>
         </div>
       </section>
