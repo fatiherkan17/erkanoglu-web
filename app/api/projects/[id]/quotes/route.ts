@@ -64,3 +64,30 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ success: false, message: "Teklif oluşturulamadı." }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  try {
+    const projectId = Number((await params).id);
+    if (!Number.isInteger(projectId)) return NextResponse.json({ success: false, message: "Geçersiz proje." }, { status: 400 });
+
+    const body = await request.json();
+    const status = typeof body.status === "string" ? body.status.trim().toUpperCase() : "";
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ success: false, message: "Geçersiz teklif durumu." }, { status: 400 });
+    }
+
+    const quoteId = Number(body.quoteId);
+    if (!Number.isInteger(quoteId)) {
+      return NextResponse.json({ success: false, message: "Geçersiz teklif." }, { status: 400 });
+    }
+
+    const quote = await prisma.quote.findFirst({ where: { id: quoteId, projectId } });
+    if (!quote) return NextResponse.json({ success: false, message: "Teklif bulunamadı." }, { status: 404 });
+
+    const updated = await prisma.quote.update({ where: { id: quoteId }, data: { status } });
+    return NextResponse.json({ success: true, message: "Teklif durumu güncellendi.", data: updated });
+  } catch (error) {
+    console.error("Quotes PATCH error:", error);
+    return NextResponse.json({ success: false, message: "Teklif durumu güncellenemedi." }, { status: 500 });
+  }
+}
