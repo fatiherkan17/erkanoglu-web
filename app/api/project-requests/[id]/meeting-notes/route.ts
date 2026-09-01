@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const projectRequest = await prisma.projectRequest.findUnique({
       where: { id: projectRequestId },
-      select: { id: true, project: { select: { id: true } } },
+      select: { id: true, status: true, project: { select: { id: true } } },
     });
     if (!projectRequest) {
       return NextResponse.json({ success: false, message: "Proje talebi bulunamadı." }, { status: 404 });
@@ -81,6 +81,12 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ success: false, message: "Geçersiz görüşme tarihi." }, { status: 400 });
     }
 
+    const nextStatus = type === "YUZ_YUZE" && ["YENI", "INCELENIYOR"].includes(projectRequest.status)
+      ? "GORUSME_YAPILDI"
+      : type === "TELEFON" && projectRequest.status === "YENI"
+        ? "INCELENIYOR"
+        : projectRequest.status;
+
     const created = await prisma.$transaction(async (tx) => {
       const meetingNote = await tx.meetingNote.create({
         data: projectRequest.project
@@ -90,13 +96,18 @@ export async function POST(request: Request, { params }: RouteContext) {
 
       await tx.projectRequest.update({
         where: { id: projectRequest.id },
-        data: { lastContactAt: meetingAt },
+        data: { lastContactAt: meetingAt, status: nextStatus },
       });
 
       return meetingNote;
     });
 
-    return NextResponse.json({ success: true, message: "Görüşme notu eklendi.", data: created }, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      message: "Görüşme notu eklendi.",
+      data: created,
+      nextStatus,
+    }, { status: 201 });
   } catch (error) {
     console.error("Lead meeting notes POST error:", error);
     return NextResponse.json({ success: false, message: "Görüşme notu eklenemedi." }, { status: 500 });
