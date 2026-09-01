@@ -7,7 +7,8 @@ import { trackEvent } from "../components/Analytics";
 
 function ProjeTalebiContent() {
   const searchParams = useSearchParams();
-  const source = searchParams.get("source") || "direct";
+  const rawSource = searchParams.get("source") || "direct";
+  const source = ["direct", "calculator", "collaboration"].includes(rawSource) ? rawSource : "direct";
   const [form, setForm] = useState(() => ({
     fullName: "", phone: "", email: "",
     projectType: searchParams.get("projectType") || "",
@@ -35,6 +36,7 @@ function ProjeTalebiContent() {
         district: form.district || "Belirtilmedi", neighborhood: "Belirtilmedi",
         buildingType: form.projectType, projectStage: "Ön Görüşme", approximateArea: form.area || null,
         interestAreas: source === "collaboration" ? "İş Birliği" : "Mimarlık / Ruhsat Projesi",
+        source,
         description: `${source === "collaboration" ? "Başvuru kaynağı: İş Birliği\n" : ""}E-posta: ${form.email || "Belirtilmedi"}\nZamanlama: ${form.timeline || "Belirtilmedi"}\nBütçe: ${form.budget || "Belirtilmedi"}\n\n${form.description}`.trim(),
       }) });
       if (!response.ok) throw new Error("Talep gönderilemedi.");
