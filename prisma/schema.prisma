@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model ProjectRequest {
@@ -16,10 +16,10 @@ model ProjectRequest {
   neighborhood String
 
   buildingType    String
-  projectStage    String
+  projectStage   String
   approximateArea String?
-  interestAreas   String
-  description     String?
+  interestAreas  String
+  description    String?
 
   status         String    @default("YENI")
   source         String    @default("direct")
