@@ -21,9 +21,13 @@ model ProjectRequest {
   interestAreas   String
   description     String?
 
-  status    String   @default("YENI")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status         String    @default("YENI")
+  source         String    @default("direct")
+  priority       String    @default("NORMAL")
+  lastContactAt  DateTime?
+  nextFollowUpAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   project Project?
 }
