@@ -30,11 +30,11 @@ type ProjectRequest = {
 };
 
 const statusLabels: Record<string, string> = {
-  YENI: "Yeni",
+  YENI: "Yeni Talep",
   INCELENIYOR: "İnceleniyor",
-  GORUSME_YAPILDI: "Görüşme Yapıldı",
-  TEKLIF_HAZIRLANIYOR: "Teklif Hazırlanıyor",
-  TEKLIF_GONDERILDI: "Teklif Gönderildi",
+  GORUSME_YAPILDI: "Ofis Görüşmesi",
+  TEKLIF_HAZIRLANIYOR: "Teklif",
+  TEKLIF_GONDERILDI: "Teklif",
   KAZANILDI: "Kazanıldı",
   KAYBEDILDI: "Kaybedildi",
   PROJE_OLUSTURULDU: "Projeye Dönüştürüldü",
@@ -83,25 +83,25 @@ export default function ProjectRequestsPage() {
         <div className="border-b border-[#d8d3c8] pb-8">
           <p className="text-[9px] uppercase tracking-[0.25em] text-[#8d8579]">Erkanoğlu Yönetim</p>
           <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div><h1 className="text-4xl font-light tracking-[-0.04em]">Proje Talepleri</h1><p className="mt-3 text-sm text-[#777064]">Gelen talepleri satış fırsatı olarak takip edin.</p></div>
-            <Link href="/admin/projects" className="border border-[#aaa398] px-5 py-3 text-[10px] uppercase tracking-[0.18em] hover:bg-black hover:text-white">Projeler →</Link>
+            <div><h1 className="text-4xl font-light tracking-[-0.04em]">Müşteri Talepleri</h1><p className="mt-3 max-w-2xl text-sm text-[#777064]">Önce talebi okuyun, ardından müşteriye ulaşıp yüz yüze görüşmeye taşıyın.</p></div>
+            <div className="flex gap-2"><Link href="/admin" className="border border-[#aaa398] px-5 py-3 text-[10px] uppercase tracking-[0.18em] hover:bg-black hover:text-white">Yönetim →</Link><Link href="/admin/projects" className="border border-[#aaa398] px-5 py-3 text-[10px] uppercase tracking-[0.18em] hover:bg-black hover:text-white">Projeler →</Link></div>
           </div>
         </div>
 
-        {loading && <div className="py-16 text-sm text-[#777064]">Proje talepleri yükleniyor...</div>}
+        {loading && <div className="py-16 text-sm text-[#777064]">Müşteri talepleri yükleniyor...</div>}
         {!loading && error && <div className="mt-8 border border-red-300 bg-red-50 p-5 text-sm text-red-800">{error}</div>}
-        {!loading && !error && requests.length === 0 && <div className="mt-8 border border-[#d8d3c8] bg-[#f8f5ef] p-8 text-sm text-[#777064]">Henüz proje talebi bulunmuyor.</div>}
+        {!loading && !error && requests.length === 0 && <div className="mt-8 border border-[#d8d3c8] bg-[#f8f5ef] p-8 text-sm text-[#777064]">Henüz müşteri talebi bulunmuyor.</div>}
 
         {!loading && !error && requests.length > 0 && (
           <div className="mt-8 overflow-hidden border border-[#d8d3c8] bg-[#f8f5ef]">
-            <div className="hidden grid-cols-[1.45fr_0.9fr_0.8fr_0.8fr_1.1fr_auto] border-b border-[#d8d3c8] px-6 py-4 text-[9px] uppercase tracking-[0.18em] text-[#8d8579] lg:grid">
-              <span>Müşteri</span><span>Kaynak / Öncelik</span><span>Durum</span><span>Teklif</span><span>Takip</span><span></span>
+            <div className="hidden grid-cols-[1.5fr_0.8fr_0.9fr_0.8fr_1.05fr_auto] border-b border-[#d8d3c8] px-6 py-4 text-[9px] uppercase tracking-[0.18em] text-[#8d8579] lg:grid">
+              <span>Müşteri</span><span>Özet</span><span>Aşama</span><span>Teklif</span><span>Son Temas / Takip</span><span></span>
             </div>
             {requests.map((request) => {
               const latestQuote = request.project?.quotes?.[0];
               const latestMeeting = request.project?.meetingNotes?.[0];
               return (
-                <Link key={request.id} href={`/admin/project-requests/${request.id}`} className="grid gap-5 border-b border-[#ddd8ce] px-6 py-6 transition hover:bg-[#eee9df] last:border-b-0 lg:grid-cols-[1.45fr_0.9fr_0.8fr_0.8fr_1.1fr_auto] lg:items-center">
+                <Link key={request.id} href={`/admin/project-requests/${request.id}`} className="grid gap-5 border-b border-[#ddd8ce] px-6 py-6 transition hover:bg-[#eee9df] last:border-b-0 lg:grid-cols-[1.5fr_0.8fr_0.9fr_0.8fr_1.05fr_auto] lg:items-center">
                   <div><p className="text-base">{request.fullName}</p><p className="mt-1 text-xs text-[#8d8579]">#{request.id} · {request.buildingType} · {request.approximateArea ? `${request.approximateArea} m²` : "Alan yok"}</p><p className="mt-1 text-xs text-[#9a9287]">{request.province} / {request.district}</p></div>
                   <div><p className="text-xs text-[#5f594f]">{sourceLabels[request.source] ?? request.source}</p><span className={`mt-2 inline-flex border px-2 py-1 text-[9px] uppercase tracking-[0.12em] ${priorityClass(request.priority)}`}>{priorityLabels[request.priority] ?? request.priority}</span></div>
                   <div><span className="inline-flex border border-[#c9c2b6] px-3 py-2 text-[9px] uppercase tracking-[0.1em]">{statusLabels[request.status] ?? request.status}</span></div>
