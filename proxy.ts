@@ -6,7 +6,7 @@ const PUBLIC_API = new Set([
   "/api/admin/auth/logout",
 ]);
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/admin/login") return NextResponse.next();
