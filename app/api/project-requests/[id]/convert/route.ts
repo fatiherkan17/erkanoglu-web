@@ -18,6 +18,13 @@ export async function POST(_request: Request, { params }: RouteContext) {
 
     const result = await prisma.$transaction(async (tx) => {
       const project = await tx.project.create({ data: { projectNo, name: projectRequest.fullName, status: "AKTIF", projectRequestId: projectRequest.id } });
+
+      // Keep pre-project meeting history by attaching it to the newly created project.
+      await tx.meetingNote.updateMany({
+        where: { projectRequestId: projectRequest.id },
+        data: { projectId: project.id, projectRequestId: null },
+      });
+
       const updatedRequest = await tx.projectRequest.update({ where: { id: projectRequest.id }, data: { status: "PROJE_OLUSTURULDU" }, include: { project: true } });
       return { project, projectRequest: updatedRequest };
     });
