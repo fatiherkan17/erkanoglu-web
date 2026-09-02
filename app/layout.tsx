@@ -7,13 +7,17 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://erkanoglu.com.tr"),
-  title: "Erkanoğlu | Mimarlık · Mühendislik · İnşaat · Yaşam Alanları",
-  description: "Erkanoğlu; mimarlık, mühendislik, inşaat ve yaşam alanlarını tek merkezde buluşturur. Çanakkale ve çevresinde proje, mühendislik ve yapım çözümleri.",
-  keywords: ["Erkanoğlu", "Erkanoğlu Mühendislik", "Çanakkale mühendislik", "Çanakkale inşaat", "statik proje", "mimari proje", "villa proje", "anahtar teslim inşaat"],
+  title: "Erkanoğlu | Mimarlık · Mühendislik · İnşaat · Tadilat",
+  description: "Erkanoğlu; mimarlık, mühendislik, danışmanlık, müteahhitlik, tadilat, uygulama ve şantiye yönetimini tek proje anlayışında buluşturur. Çanakkale ve çevresinde çalışır.",
+  keywords: [
+    "Erkanoğlu", "Erkanoğlu Mühendislik", "Çanakkale mimarlık", "Çanakkale mühendislik", "Çanakkale inşaat",
+    "statik proje", "mimari proje", "uygulama projesi", "villa proje", "ruhsat projesi", "tadilat", "renovasyon",
+    "müteahhitlik", "şantiye yönetimi", "anahtar teslim inşaat",
+  ],
   icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
   openGraph: {
-    title: "Erkanoğlu | Projeden Yaşam Alanına",
-    description: "Mimarlık, mühendislik, inşaat ve yaşam alanları tek merkezde.",
+    title: "Erkanoğlu | Fikirden Uygulamaya",
+    description: "Mimarlık, mühendislik, danışmanlık, yapım, tadilat ve şantiye yönetimi.",
     type: "website",
     locale: "tr_TR",
     siteName: "Erkanoğlu",
