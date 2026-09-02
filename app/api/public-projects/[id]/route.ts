@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: Params) {
 
     const project = await prisma.project.findFirst({
       where: { id: projectId, published: true },
-      select: { id: true, projectNo: true, category: true, publicTitle: true, publicSummary: true, coverImageUrl: true, galleryImages: true, status: true },
+      select: { id: true, projectNo: true, category: true, publicTitle: true, publicSummary: true, coverImageUrl: true, galleryImages: true, applicationProjects: true, workmanshipArchive: true, status: true },
     });
 
     if (!project) return NextResponse.json({ success: false, message: "Proje bulunamadı." }, { status: 404 });
