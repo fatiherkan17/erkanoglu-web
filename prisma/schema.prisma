@@ -45,6 +45,7 @@ model Project {
   publicSummary        String?
   coverImageUrl        String?
   galleryImages        String?
+  serviceLines         String?
   applicationProjects  String?
   workmanshipArchive   String?
 
