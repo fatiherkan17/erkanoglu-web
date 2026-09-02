@@ -39,12 +39,14 @@ model Project {
   name      String?
   status    String  @default("AKTIF")
 
-  published      Boolean @default(false)
-  category       String  @default("KONUT")
-  publicTitle    String?
-  publicSummary  String?
-  coverImageUrl  String?
-  galleryImages  String?
+  published            Boolean @default(false)
+  category             String  @default("KONUT")
+  publicTitle          String?
+  publicSummary        String?
+  coverImageUrl        String?
+  galleryImages        String?
+  applicationProjects  String?
+  workmanshipArchive   String?
 
   projectRequestId Int            @unique
   projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
