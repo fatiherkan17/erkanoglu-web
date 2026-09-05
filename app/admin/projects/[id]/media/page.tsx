@@ -39,6 +39,7 @@ export default function ProjectMediaPage() {
   const [projectName, setProjectName] = useState("Proje");
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(0);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -89,17 +90,41 @@ export default function ProjectMediaPage() {
   }
 
   async function updatePlacement(id: number, placement: string) {
-    const response = await fetch(`/api/projects/${projectId}/media`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mediaId: id, placement }),
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      setError(result.message || "Yerleşim güncellenemedi.");
-      return;
+    try {
+      setError("");
+      const response = await fetch(`/api/projects/${projectId}/media`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaId: id, placement }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Yerleşim güncellenemedi.");
+      setMedia((items) => items.map((item) => (item.id === id ? result.data : item)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Yerleşim güncellenemedi.");
     }
-    setMedia((items) => items.map((item) => (item.id === id ? result.data : item)));
+  }
+
+  async function deleteMedia(item: Media) {
+    const confirmed = window.confirm(`“${item.originalName}” fotoğrafını kalıcı olarak silmek istiyor musun?`);
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(item.id);
+      setError("");
+      const response = await fetch(`/api/projects/${projectId}/media`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaId: item.id }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Fotoğraf silinemedi.");
+      setMedia((items) => items.filter((mediaItem) => mediaItem.id !== item.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fotoğraf silinemedi.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -126,7 +151,7 @@ export default function ProjectMediaPage() {
         >
           <p className="text-lg font-light">Fotoğrafları buraya sürükle bırak</p>
           <p className="mt-2 text-sm text-neutral-500">veya bilgisayardan topluca seç</p>
-          <button type="button" onClick={() => inputRef.current?.click()} disabled={Boolean(uploading)} className="mt-6 rounded-full bg-[#151515] px-6 py-3 text-sm text-white disabled:opacity-50">
+          <button type="button" onClick={() => inputRef.current?.click()} disabled={Boolean(uploading) || Boolean(deletingId)} className="mt-6 rounded-full bg-[#151515] px-6 py-3 text-sm text-white disabled:opacity-50">
             {uploading ? `${uploading} / seçilen yükleniyor...` : "Fotoğrafları Seç →"}
           </button>
           <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(event) => { if (event.target.files) void uploadFiles(event.target.files); event.currentTarget.value = ""; }} />
@@ -156,10 +181,13 @@ export default function ProjectMediaPage() {
                     <p className="truncate text-xs text-neutral-700" title={item.originalName}>{item.originalName}</p>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[10px] text-neutral-400">{formatSize(item.size)}</span>
-                      <select value={item.placement} onChange={(event) => void updatePlacement(item.id, event.target.value)} className="border border-neutral-400 bg-transparent px-3 py-2 text-xs outline-none">
+                      <select value={item.placement} onChange={(event) => void updatePlacement(item.id, event.target.value)} disabled={Boolean(deletingId)} className="border border-neutral-400 bg-transparent px-3 py-2 text-xs outline-none">
                         {placementOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                       </select>
                     </div>
+                    <button type="button" onClick={() => void deleteMedia(item)} disabled={Boolean(deletingId) || Boolean(uploading)} className="w-full border border-red-300 px-3 py-2 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-50">
+                      {deletingId === item.id ? "Siliniyor..." : "Fotoğrafı Sil"}
+                    </button>
                   </div>
                 </article>
               ))}
