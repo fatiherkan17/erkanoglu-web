@@ -1,6 +1,13 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyAdminToken } from "@/lib/admin-auth";
+
+function getCookieValue(request: Request, name: string) {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}=([^;]*)`));
+  return match?.[1];
+}
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
@@ -10,6 +17,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       body,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
+        const adminToken = getCookieValue(request, "erkanoglu_admin");
+        if (!(await verifyAdminToken(adminToken))) throw new Error("Yetkisiz erişim.");
+
         const match = pathname.match(/^projects\/(\d+)\/media\//);
         if (!match) throw new Error("Geçersiz proje medya yolu.");
 
