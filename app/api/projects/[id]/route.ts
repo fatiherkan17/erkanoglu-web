@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 type RouteContext = { params: Promise<{ id: string }> };
 const allowedStatuses = ["AKTIF", "SOZLESME", "BEKLEMEDE", "TAMAMLANDI", "IPTAL"];
-const allowedCategories = ["KONUT", "VILLA", "TICARI", "KARMA", "ENDUSTRIYEL", "MEVCUT_YAPI"];
+const allowedCategories = ["KONUT", "VILLA", "TICARI", "KARMA", "ENDUSTRIYEL", "MEVCUT_YAPI", "KENTSEL_DONUSUM", "TADILAT_RENOVASYON"];
 const clean = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const isArchiveJson = (value: string) => {
   try {
@@ -24,7 +24,24 @@ export async function GET(_request: Request, { params }: RouteContext) {
     if (!Number.isInteger(id)) return NextResponse.json({ success: false, message: "Geçersiz proje numarası." }, { status: 400 });
     const project = await prisma.project.findUnique({ where: { id }, include: { projectRequest: true } });
     if (!project) return NextResponse.json({ success: false, message: "Proje bulunamadı." }, { status: 404 });
-    return NextResponse.json({ success: true, data: project });
+
+    const referenceRequest = project.projectRequest ?? {
+      id: 0,
+      fullName: project.name || project.publicTitle || project.projectNo,
+      phone: "",
+      province: "",
+      district: "",
+      neighborhood: "",
+      buildingType: "Referans Proje",
+      projectStage: project.status,
+      approximateArea: null,
+      interestAreas: "",
+      description: project.publicSummary || null,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    };
+
+    return NextResponse.json({ success: true, data: { ...project, projectRequest: referenceRequest } });
   } catch (error) {
     console.error("Project GET error:", error);
     return NextResponse.json({ success: false, message: "Proje alınamadı." }, { status: 500 });
@@ -77,7 +94,22 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (Object.keys(data).length === 0) return NextResponse.json({ success: false, message: "Güncellenecek alan bulunamadı." }, { status: 400 });
 
     const project = await prisma.project.update({ where: { id }, data, include: { projectRequest: true } });
-    return NextResponse.json({ success: true, message: "Proje güncellendi.", data: project });
+    const referenceRequest = project.projectRequest ?? {
+      id: 0,
+      fullName: project.name || project.publicTitle || project.projectNo,
+      phone: "",
+      province: "",
+      district: "",
+      neighborhood: "",
+      buildingType: "Referans Proje",
+      projectStage: project.status,
+      approximateArea: null,
+      interestAreas: "",
+      description: project.publicSummary || null,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    };
+    return NextResponse.json({ success: true, message: "Proje güncellendi.", data: { ...project, projectRequest: referenceRequest } });
   } catch (error) {
     console.error("Project PATCH error:", error);
     return NextResponse.json({ success: false, message: "Proje güncellenemedi." }, { status: 500 });
