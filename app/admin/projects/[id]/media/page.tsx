@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 
 type Media = {
@@ -31,8 +32,8 @@ function formatSize(size: number) {
 }
 
 export default function ProjectMediaPage() {
-  const params = useMemo(() => ({ id: window.location.pathname.split("/").filter(Boolean).at(-2) || "" }), []);
-  const projectId = params.id;
+  const params = useParams<{ id: string }>();
+  const projectId = params?.id || "";
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [media, setMedia] = useState<Media[]>([]);
   const [projectName, setProjectName] = useState("Proje");
@@ -58,7 +59,7 @@ export default function ProjectMediaPage() {
   }
 
   useEffect(() => {
-    loadMedia();
+    void loadMedia();
   }, [projectId]);
 
   async function uploadFiles(files: FileList | File[]) {
@@ -88,10 +89,10 @@ export default function ProjectMediaPage() {
   }
 
   async function updatePlacement(id: number, placement: string) {
-    const response = await fetch(`/api/projects/${projectId}/media/${id}`, {
+    const response = await fetch(`/api/projects/${projectId}/media`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ placement }),
+      body: JSON.stringify({ mediaId: id, placement }),
     });
     const result = await response.json();
     if (!response.ok) {
@@ -104,9 +105,7 @@ export default function ProjectMediaPage() {
   return (
     <main className="min-h-screen bg-[#f7f5f0] px-6 py-12">
       <div className="mx-auto max-w-6xl">
-        <Link href={`/admin/projects/${projectId}`} className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-          ← Projeye Dön
-        </Link>
+        <Link href={`/admin/projects/${projectId}`} className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← Projeye Dön</Link>
 
         <div className="mt-8 border-b border-neutral-300 pb-7">
           <p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Medya Havuzu</p>
@@ -127,12 +126,7 @@ export default function ProjectMediaPage() {
         >
           <p className="text-lg font-light">Fotoğrafları buraya sürükle bırak</p>
           <p className="mt-2 text-sm text-neutral-500">veya bilgisayardan topluca seç</p>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={Boolean(uploading)}
-            className="mt-6 rounded-full bg-[#151515] px-6 py-3 text-sm text-white disabled:opacity-50"
-          >
+          <button type="button" onClick={() => inputRef.current?.click()} disabled={Boolean(uploading)} className="mt-6 rounded-full bg-[#151515] px-6 py-3 text-sm text-white disabled:opacity-50">
             {uploading ? `${uploading} / seçilen yükleniyor...` : "Fotoğrafları Seç →"}
           </button>
           <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(event) => { if (event.target.files) void uploadFiles(event.target.files); event.currentTarget.value = ""; }} />
