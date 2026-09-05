@@ -53,9 +53,29 @@ model Project {
   projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
   meetingNotes     MeetingNote[]
   quotes           Quote[]
+  media            ProjectMedia[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ProjectMedia {
+  id           Int      @id @default(autoincrement())
+  projectId    Int
+  url          String
+  pathname     String
+  originalName String
+  contentType  String
+  size         Int
+  placement    String   @default("BEKLEMEDE")
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, placement])
 }
 
 model MeetingNote {
