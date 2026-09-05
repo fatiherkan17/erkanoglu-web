@@ -49,8 +49,8 @@ model Project {
   applicationProjects  String?
   workmanshipArchive   String?
 
-  projectRequestId Int            @unique
-  projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
+  projectRequestId Int?            @unique
+  projectRequest   ProjectRequest? @relation(fields: [projectRequestId], references: [id], onDelete: Restrict)
   meetingNotes     MeetingNote[]
   quotes           Quote[]
   media            ProjectMedia[]
