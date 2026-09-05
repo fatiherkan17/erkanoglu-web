@@ -19,7 +19,9 @@ export default function HomePage() {
           <Link href="/" className="text-xl font-semibold tracking-[0.22em] text-white mix-blend-difference">ERKANOĞLU</Link>
           <nav className="hidden items-center gap-7 text-sm text-white mix-blend-difference md:flex">
             <a href="#hizmetler">Hizmetler</a>
-            <Link href="/projeler">Referans İşler</Link>
+            <Link href="/projeler#referans-projeler">Referans Projeler</Link>
+            <Link href="/projeler#uygulama-projeleri">Uygulama Projeleri</Link>
+            <Link href="/projeler#imalat-arsivi">İmalat Arşivi</Link>
             <Link href="/is-birligi">Çözüm Ortakları</Link>
             <a href="#iletisim">İletişim</a>
           </nav>
