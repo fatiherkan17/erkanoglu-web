@@ -19,6 +19,12 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Vercel Blob calls this route without the browser's admin cookie when an upload completes.
+  // The route itself verifies the admin cookie before issuing any client upload token.
+  if (pathname.match(/^\/api\/projects\/\d+\/media\/upload$/) && request.method === "POST") {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_API.has(pathname)) return NextResponse.next();
 
   const token = request.cookies.get("erkanoglu_admin")?.value;
