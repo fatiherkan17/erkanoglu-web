@@ -3,7 +3,7 @@ import { del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/admin-auth";
 
-const placements = new Set(["BEKLEMEDE", "KAPAK", "GALERI", "UYGULAMA", "IMALAT"]);
+const placements = new Set(["PROJE", "INSAI"]);
 
 function getCookieValue(request: Request, name: string) {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -12,8 +12,7 @@ function getCookieValue(request: Request, name: string) {
 }
 
 async function requireAdmin(request: Request) {
-  const token = getCookieValue(request, "erkanoglu_admin");
-  return verifyAdminToken(token);
+  return verifyAdminToken(getCookieValue(request, "erkanoglu_admin"));
 }
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
@@ -21,49 +20,72 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const projectId = Number(id);
   if (!Number.isInteger(projectId)) return NextResponse.json({ success: false, message: "Geçersiz proje." }, { status: 400 });
 
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true, name: true, publicTitle: true },
-  });
+  const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, name: true, publicTitle: true } });
   if (!project) return NextResponse.json({ success: false, message: "Proje bulunamadı." }, { status: 404 });
 
-  const media = await prisma.projectMedia.findMany({ where: { projectId }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
+  const media = await prisma.projectMedia.findMany({
+    where: { projectId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
   return NextResponse.json({ success: true, data: { project, media } });
 }
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  if (!(await requireAdmin(request))) return NextResponse.json({ success: false, message: "Yetkisiz erişim." }, { status: 401 });
+
   const { id } = await context.params;
   const projectId = Number(id);
   if (!Number.isInteger(projectId)) return NextResponse.json({ success: false, message: "Geçersiz proje." }, { status: 400 });
 
-  const body = (await request.json().catch(() => ({}))) as { mediaId?: number; placement?: string };
-  const mediaId = Number(body.mediaId);
-  const placement = body.placement || "";
-  if (!Number.isInteger(mediaId) || !placements.has(placement)) {
-    return NextResponse.json({ success: false, message: "Geçersiz medya veya yerleşim." }, { status: 400 });
+  const body = (await request.json().catch(() => ({}))) as {
+    mediaId?: number;
+    placement?: string;
+    sortOrder?: number;
+    orderedIds?: number[];
+  };
+
+  if (Array.isArray(body.orderedIds)) {
+    const ids = body.orderedIds.map(Number).filter(Number.isInteger);
+    const media = await prisma.projectMedia.findMany({ where: { projectId }, select: { id: true } });
+    const allowed = new Set(media.map((item) => item.id));
+    if (ids.length !== media.length || ids.some((item) => !allowed.has(item)) || new Set(ids).size !== ids.length) {
+      return NextResponse.json({ success: false, message: "Sıralama verisi geçersiz." }, { status: 400 });
+    }
+    await prisma.$transaction(ids.map((mediaId, index) => prisma.projectMedia.update({ where: { id: mediaId }, data: { sortOrder: index } })));
+    const updated = await prisma.projectMedia.findMany({ where: { projectId }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
+    return NextResponse.json({ success: true, data: updated });
   }
 
+  const mediaId = Number(body.mediaId);
+  if (!Number.isInteger(mediaId)) return NextResponse.json({ success: false, message: "Geçersiz medya." }, { status: 400 });
   const media = await prisma.projectMedia.findFirst({ where: { id: mediaId, projectId } });
   if (!media) return NextResponse.json({ success: false, message: "Medya bulunamadı." }, { status: 404 });
 
-  const updated = await prisma.projectMedia.update({ where: { id: mediaId }, data: { placement } });
+  const data: { placement?: string; sortOrder?: number } = {};
+  if (body.placement !== undefined) {
+    if (!placements.has(body.placement)) return NextResponse.json({ success: false, message: "Geçersiz fotoğraf türü." }, { status: 400 });
+    data.placement = body.placement;
+  }
+  if (body.sortOrder !== undefined) {
+    const sortOrder = Number(body.sortOrder);
+    if (!Number.isInteger(sortOrder) || sortOrder < 0) return NextResponse.json({ success: false, message: "Geçersiz sıra." }, { status: 400 });
+    data.sortOrder = sortOrder;
+  }
+  if (Object.keys(data).length === 0) return NextResponse.json({ success: false, message: "Güncellenecek alan bulunamadı." }, { status: 400 });
+
+  const updated = await prisma.projectMedia.update({ where: { id: mediaId }, data });
   return NextResponse.json({ success: true, data: updated });
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
-  if (!(await requireAdmin(request))) {
-    return NextResponse.json({ success: false, message: "Yetkisiz erişim." }, { status: 401 });
-  }
+  if (!(await requireAdmin(request))) return NextResponse.json({ success: false, message: "Yetkisiz erişim." }, { status: 401 });
 
   const { id } = await context.params;
   const projectId = Number(id);
   if (!Number.isInteger(projectId)) return NextResponse.json({ success: false, message: "Geçersiz proje." }, { status: 400 });
-
   const body = (await request.json().catch(() => ({}))) as { mediaId?: number };
   const mediaId = Number(body.mediaId);
-  if (!Number.isInteger(mediaId)) {
-    return NextResponse.json({ success: false, message: "Geçersiz medya." }, { status: 400 });
-  }
+  if (!Number.isInteger(mediaId)) return NextResponse.json({ success: false, message: "Geçersiz medya." }, { status: 400 });
 
   const media = await prisma.projectMedia.findFirst({ where: { id: mediaId, projectId } });
   if (!media) return NextResponse.json({ success: false, message: "Medya bulunamadı." }, { status: 404 });
