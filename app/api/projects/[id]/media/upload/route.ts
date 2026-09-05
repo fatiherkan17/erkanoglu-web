@@ -9,7 +9,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async (pathname) => {
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
         const match = pathname.match(/^projects\/(\d+)\/media\//);
         if (!match) throw new Error("Geçersiz proje medya yolu.");
 
@@ -19,10 +19,21 @@ export async function POST(request: Request): Promise<NextResponse> {
         const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
         if (!project) throw new Error("Proje bulunamadı.");
 
+        let metadata: { originalName?: string; size?: number } = {};
+        try {
+          metadata = JSON.parse(clientPayload || "{}");
+        } catch {
+          metadata = {};
+        }
+
         return {
           allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
           addRandomSuffix: true,
-          tokenPayload: JSON.stringify({ projectId }),
+          tokenPayload: JSON.stringify({
+            projectId,
+            originalName: typeof metadata.originalName === "string" ? metadata.originalName : undefined,
+            size: Number.isInteger(metadata.size) ? metadata.size : 0,
+          }),
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
@@ -38,9 +49,9 @@ export async function POST(request: Request): Promise<NextResponse> {
             projectId,
             url: blob.url,
             pathname: blob.pathname,
-            originalName: blob.pathname.split("/").pop() || blob.pathname,
+            originalName: typeof payload.originalName === "string" ? payload.originalName : blob.pathname.split("/").pop() || blob.pathname,
             contentType: blob.contentType || "image/jpeg",
-            size: 0,
+            size: Number.isInteger(payload.size) ? payload.size : 0,
             placement: "BEKLEMEDE",
           },
         });
