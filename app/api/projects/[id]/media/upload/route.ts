@@ -1,0 +1,57 @@
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(request: Request): Promise<NextResponse> {
+  const body = (await request.json()) as HandleUploadBody;
+
+  try {
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname) => {
+        const match = pathname.match(/^projects\/(\d+)\/media\//);
+        if (!match) throw new Error("Geçersiz proje medya yolu.");
+
+        const projectId = Number(match[1]);
+        if (!Number.isInteger(projectId)) throw new Error("Geçersiz proje.");
+
+        const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
+        if (!project) throw new Error("Proje bulunamadı.");
+
+        return {
+          allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
+          addRandomSuffix: true,
+          tokenPayload: JSON.stringify({ projectId }),
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        const payload = JSON.parse(tokenPayload || "{}");
+        const projectId = Number(payload.projectId);
+        if (!Number.isInteger(projectId)) throw new Error("Geçersiz proje.");
+
+        const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
+        if (!project) throw new Error("Proje bulunamadı.");
+
+        await prisma.projectMedia.create({
+          data: {
+            projectId,
+            url: blob.url,
+            pathname: blob.pathname,
+            originalName: blob.pathname.split("/").pop() || blob.pathname,
+            contentType: blob.contentType || "image/jpeg",
+            size: 0,
+            placement: "BEKLEMEDE",
+          },
+        });
+      },
+    });
+
+    return NextResponse.json(jsonResponse);
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: error instanceof Error ? error.message : "Yükleme başlatılamadı." },
+      { status: 400 },
+    );
+  }
+}
