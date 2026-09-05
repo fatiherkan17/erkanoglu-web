@@ -5,8 +5,8 @@ import { verifyAdminToken } from "@/lib/admin-auth";
 
 function getCookieValue(request: Request, name: string) {
   const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}=([^;]*)`));
-  return match?.[1];
+  const pair = cookieHeader.split(";").map((item) => item.trim()).find((item) => item.startsWith(`${name}=`));
+  return pair ? pair.slice(name.length + 1) : undefined;
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
