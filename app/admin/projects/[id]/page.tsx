@@ -1,58 +1,106 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import MeetingNotes from "./MeetingNotes";
-import Quotes from "./Quotes";
 
-type ArchiveItem = { title: string; url: string; category?: string };
-type Project = {
-  id:number; projectNo:string; name:string|null; status:string; published:boolean; category:string;
-  publicTitle:string|null; publicSummary:string|null; coverImageUrl:string|null; galleryImages:string|null;
-  applicationProjects:string|null; workmanshipArchive:string|null; createdAt:string; updatedAt:string;
-  projectRequest:{ id:number; fullName:string; phone:string; province:string; district:string; neighborhood:string; buildingType:string; projectStage:string; approximateArea:string|null; interestAreas:string; description:string|null; createdAt:string; updatedAt:string; }
-};
-const statusOptions=[{value:"AKTIF",label:"Aktif"},{value:"SOZLESME",label:"Sözleşme aşaması"},{value:"BEKLEMEDE",label:"Beklemede"},{value:"TAMAMLANDI",label:"Tamamlandı"},{value:"IPTAL",label:"İptal"}];
-const categoryOptions=[{value:"KONUT",label:"Konut"},{value:"VILLA",label:"Villa"},{value:"TICARI",label:"Ticari Yapı"},{value:"KARMA",label:"Karma Kullanım"},{value:"ENDUSTRIYEL",label:"Endüstriyel"},{value:"MEVCUT_YAPI",label:"Mevcut Yapı"}];
-const statusLabel=(status:string)=>statusOptions.find((item)=>item.value===status)?.label??status;
-const formatDate=(value:string)=>{const date=new Date(value);return Number.isNaN(date.getTime())?"-":date.toLocaleString("tr-TR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});};
-const parseJsonArray=(value:string|null)=>{if(!value)return [];try{const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[];}catch{return [];}};
-const galleryToText=(value:string|null)=>parseJsonArray(value).filter((item):item is string=>typeof item==="string").join("\n");
-const archiveToText=(value:string|null)=>parseJsonArray(value).map((item)=>{if(!item||typeof item!=="object")return "";const record=item as Record<string,unknown>;const title=typeof record.title==="string"?record.title:"";const url=typeof record.url==="string"?record.url:"";const category=typeof record.category==="string"?record.category:"";return [category,title,url].filter(Boolean).join(" | ");}).filter(Boolean).join("\n");
-const textToArchive=(value:string,workmanship=false):ArchiveItem[]=>value.split("\n").map((line)=>line.trim()).filter(Boolean).map((line)=>{const parts=line.split("|").map((item)=>item.trim());if(workmanship)return {category:parts.length>2?parts[0]:"İmalat",title:parts.length>2?parts[1]:parts[0],url:parts.length>2?parts[2]:parts[1]||""};return {title:parts[0],url:parts[1]||""};}).filter((item)=>item.title&&item.url);
+type Media = { id: number; url: string; originalName: string; placement: string; sortOrder: number };
+type Project = { id: number; projectNo: string; name: string | null; publicTitle: string | null; publicSummary: string | null; published: boolean };
 
-export default function ProjectDetailPage(){
- const params=useParams(); const id=Array.isArray(params?.id)?params.id[0]:params?.id;
- const [project,setProject]=useState<Project|null>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [publishing,setPublishing]=useState(false); const [error,setError]=useState("");
- const [publicTitle,setPublicTitle]=useState(""); const [publicSummary,setPublicSummary]=useState(""); const [category,setCategory]=useState("KONUT"); const [coverImageUrl,setCoverImageUrl]=useState(""); const [galleryImages,setGalleryImages]=useState(""); const [applicationProjects,setApplicationProjects]=useState(""); const [workmanshipArchive,setWorkmanshipArchive]=useState(""); const [published,setPublished]=useState(false);
- useEffect(()=>{if(!id)return;async function loadProject(){try{setLoading(true);setError("");const response=await fetch(`/api/projects/${id}`,{cache:"no-store"});const result=await response.json();if(!response.ok)throw new Error(result.message||"Proje alınamadı.");const data=result.data as Project;setProject(data);setPublicTitle(data.publicTitle||"");setPublicSummary(data.publicSummary||"");setCategory(data.category||"KONUT");setCoverImageUrl(data.coverImageUrl||"");setGalleryImages(galleryToText(data.galleryImages));setApplicationProjects(archiveToText(data.applicationProjects));setWorkmanshipArchive(archiveToText(data.workmanshipArchive));setPublished(Boolean(data.published));}catch(err){console.error("Project detail error:",err);setError(err instanceof Error?err.message:"Proje bilgileri alınamadı.");}finally{setLoading(false);}}loadProject();},[id]);
- async function updateStatus(status:string){if(!project||saving||publishing)return;try{setSaving(true);setError("");const response=await fetch(`/api/projects/${project.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});const result=await response.json();if(!response.ok)throw new Error(result.message||"Durum güncellenemedi.");setProject(result.data);}catch(err){console.error("Project status error:",err);setError(err instanceof Error?err.message:"Durum güncellenemedi.");}finally{setSaving(false);}}
- async function savePublicSettings(){if(!project||saving||publishing)return;const images=galleryImages.split("\n").map((item)=>item.trim()).filter(Boolean);const application=textToArchive(applicationProjects);const workmanship=textToArchive(workmanshipArchive,true);try{setPublishing(true);setError("");const response=await fetch(`/api/projects/${project.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({published,category,publicTitle,publicSummary,coverImageUrl,galleryImages:JSON.stringify(images),applicationProjects:JSON.stringify(application),workmanshipArchive:JSON.stringify(workmanship)})});const result=await response.json();if(!response.ok)throw new Error(result.message||"Portföy bilgileri kaydedilemedi.");setProject(result.data);}catch(err){console.error("Project public settings error:",err);setError(err instanceof Error?err.message:"Portföy bilgileri kaydedilemedi.");}finally{setPublishing(false);}}
- if(loading)return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-5xl"><p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Proje yükleniyor...</p></div></main>;
- if(!project)return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-5xl"><Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← İşler / Projeler</Link><div className="mt-10 border border-neutral-300 bg-[#faf9f6] p-8"><p className="text-sm text-red-700">{error||"Proje bulunamadı."}</p></div></div></main>;
- const request=project.projectRequest; const processStatus=project.status;
- return <main className="min-h-screen bg-[#f7f5f0] px-6 py-14"><div className="mx-auto max-w-5xl">
-  <Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← İşler / Projeler</Link>
-  <div className="mt-10 flex items-end justify-between border-b border-neutral-300 pb-8"><div><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Proje</p><h1 className="mt-3 text-4xl font-light tracking-tight">{request.fullName}</h1></div><div className="text-right"><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Proje No</p><p className="mt-2 text-xl">{project.projectNo}</p></div></div>
-  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><div className="flex items-center justify-between gap-8"><div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Mevcut Durum</p><p className="mt-3 text-2xl font-light">{statusLabel(project.status)}</p></div><div className="w-64"><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Durumu Güncelle</label><select value={project.status} disabled={saving||publishing} onChange={(e)=>updateStatus(e.target.value)} className="mt-2 w-full border border-neutral-500 bg-transparent px-4 py-3 text-sm outline-none">{statusOptions.map((option)=><option key={option.value} value={option.value}>{option.label}</option>)}</select></div></div>{error&&<p className="mt-5 text-xs text-red-700">{error}</p>}</section>
-  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><div className="flex flex-col gap-8"><div className="flex flex-col justify-between gap-6 md:flex-row md:items-center"><div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Web Portföyü</p><h2 className="mt-3 text-2xl font-light">Projeyi yayına hazırla</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">Gerçek proje bilgileri, seçilmiş uygulama çizimleri ve saha imalatları burada arşivlenir. Yayınlama kapalıyken hiçbir içerik ziyaretçiye gösterilmez.</p></div><label className="flex items-center gap-3 border border-neutral-300 px-4 py-3 text-sm"><input type="checkbox" checked={published} onChange={(e)=>setPublished(e.target.checked)} disabled={publishing} className="h-4 w-4"/><span>{published?"Yayınlanıyor":"Gizli"}</span></label></div>
-   <div className="grid gap-5 md:grid-cols-2"><Field label="Kamuya Açık Başlık" value={publicTitle} onChange={setPublicTitle} placeholder="Örn. Barbaros Villa Projesi"/><div><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Kategori</label><select value={category} onChange={(e)=>setCategory(e.target.value)} disabled={publishing} className="mt-2 w-full border border-neutral-400 bg-transparent px-4 py-3 text-sm outline-none">{categoryOptions.map((option)=><option key={option.value} value={option.value}>{option.label}</option>)}</select></div></div>
-   <Field label="Kısa Açıklama" value={publicSummary} onChange={setPublicSummary} placeholder="Projenin kamuya açık kısa özeti" multiline/><Field label="Kapak Görseli URL" value={coverImageUrl} onChange={setCoverImageUrl} placeholder="https://..."/>
-   <ArchiveField title="Proje Galerisi" value={galleryImages} onChange={setGalleryImages} placeholder="Her satıra bir görsel URL'si" help="Genel proje fotoğrafları. URL tabanlı kullanım; gerçek dosya yükleme daha sonra eklenebilir."/>
-   <ArchiveField title="Uygulama Projeleri" value={applicationProjects} onChange={setApplicationProjects} placeholder="Her satır: Başlık | URL" help="Örn. Mimari Uygulama Projesi | https://... veya Statik Kat Kalıp Planı | https://..."/>
-   <ArchiveField title="İmalat Arşivi" value={workmanshipArchive} onChange={setWorkmanshipArchive} placeholder="Her satır: Kategori | Başlık | Görsel URL" help="Örn. Betonarme | Temel Donatısı | https://...; Tadilat | Salon Yenileme | https://..."/>
-   <div className="flex justify-end"><button type="button" onClick={savePublicSettings} disabled={publishing||saving} className="rounded-full bg-[#151515] px-6 py-3 text-sm text-white disabled:opacity-50">{publishing?"Kaydediliyor...":"Portföy ve Arşivi Kaydet →"}</button></div>
-  </div></section>
-  <div className="mt-7 grid gap-7 md:grid-cols-2"><InfoCard title="Müşteri Bilgileri"><InfoRow label="Ad Soyad" value={request.fullName}/><InfoRow label="Telefon" value={request.phone}/></InfoCard><InfoCard title="Proje Konumu"><InfoRow label="İl" value={request.province}/><InfoRow label="İlçe" value={request.district}/><InfoRow label="Mahalle / Köy" value={request.neighborhood}/></InfoCard></div>
-  <div className="mt-7 grid gap-7 md:grid-cols-2"><InfoCard title="Yapı Bilgileri"><InfoRow label="Yapı Türü" value={request.buildingType}/><InfoRow label="Proje Aşaması" value={request.projectStage}/><InfoRow label="Yaklaşık Alan" value={request.approximateArea||"-"}/></InfoCard><InfoCard title="Talep Bilgileri"><InfoRow label="İlgilenilen Alanlar" value={request.interestAreas}/><InfoRow label="Talep Tarihi" value={formatDate(request.createdAt)}/></InfoCard></div>
-  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Müşterinin Açıklaması</p><div className="mt-5 border-t border-neutral-200 pt-5 text-sm leading-7 text-neutral-700">{request.description||"Açıklama bulunmuyor."}</div></section>
-  <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Proje Süreci</p><div className="mt-6 grid gap-3 md:grid-cols-4"><ProcessStep number="01" title="Talep" active/><ProcessStep number="02" title="İnceleme" active={processStatus!=="AKTIF"||project.createdAt!==request.createdAt}/><ProcessStep number="03" title="Teklif" active={processStatus!=="BEKLEMEDE"&&processStatus!=="IPTAL"}/><ProcessStep number="04" title="Sözleşme / Proje" active={processStatus==="SOZLESME"||processStatus==="AKTIF"||processStatus==="TAMAMLANDI"}/></div></section>
-  <MeetingNotes projectId={project.id}/><Quotes projectId={project.id} projectStatus={project.status} onProjectStatusChange={(status)=>setProject(current=>current?{...current,status,updatedAt:new Date().toISOString()}:current)}/>
-  <div className="mt-7 border-t border-neutral-300 pt-5"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-400">Son Güncelleme</p><p className="mt-2 text-xs text-neutral-500">{formatDate(project.updatedAt)}</p></div>
- </div></main>;
+export default function ProjectDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id || "";
+  const [project, setProject] = useState<Project | null>(null);
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [published, setPublished] = useState(false);
+  const [mediaCount, setMediaCount] = useState(0);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    async function load() {
+      try {
+        setLoading(true);
+        const [projectResponse, mediaResponse] = await Promise.all([
+          fetch(`/api/projects/${id}`, { cache: "no-store" }),
+          fetch(`/api/projects/${id}/media`, { cache: "no-store" }),
+        ]);
+        const projectResult = await projectResponse.json();
+        const mediaResult = await mediaResponse.json();
+        if (!projectResponse.ok) throw new Error(projectResult?.message || "Proje alınamadı.");
+        const data = projectResult.data as Project;
+        setProject(data);
+        setTitle(data.publicTitle || data.name || "");
+        setSummary(data.publicSummary || "");
+        setPublished(Boolean(data.published));
+        setMediaCount(Array.isArray(mediaResult?.data?.media) ? mediaResult.data.media.length : 0);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Proje alınamadı.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, [id]);
+
+  async function save() {
+    if (!project || saving) return;
+    try {
+      setSaving(true);
+      setError("");
+      const mediaResponse = await fetch(`/api/projects/${project.id}/media`, { cache: "no-store" });
+      const mediaResult = await mediaResponse.json();
+      if (!mediaResponse.ok) throw new Error(mediaResult?.message || "Fotoğraflar alınamadı.");
+      const media = (mediaResult?.data?.media || []) as Media[];
+      const ordered = [...media].sort((a, b) => a.sortOrder - b.sortOrder);
+      const cover = ordered.find((item) => item.placement === "KAPAK");
+      const gallery = ordered.filter((item) => item.placement === "GALERI").map((item) => item.url);
+      const applications = ordered.filter((item) => item.placement === "UYGULAMA").map((item) => ({ title: item.originalName, url: item.url }));
+      const workmanship = ordered.filter((item) => item.placement === "IMALAT").map((item) => ({ title: item.originalName, url: item.url, category: "İmalat" }));
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          published,
+          publicTitle: title.trim() || project.name || project.projectNo,
+          publicSummary: summary.trim() || null,
+          coverImageUrl: cover?.url || null,
+          galleryImages: JSON.stringify(gallery),
+          applicationProjects: JSON.stringify(applications),
+          workmanshipArchive: JSON.stringify(workmanship),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.message || "Proje kaydedilemedi.");
+      setProject(result.data as Project);
+      setMediaCount(media.length);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Proje kaydedilemedi.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-4xl text-sm text-neutral-500">Proje yükleniyor...</div></main>;
+  if (!project) return <main className="min-h-screen bg-[#f7f5f0] px-6 py-16"><div className="mx-auto max-w-4xl"><Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← Referans Projeler</Link><p className="mt-10 text-sm text-red-700">{error || "Proje bulunamadı."}</p></div></main>;
+
+  return <main className="min-h-screen bg-[#f7f5f0] px-6 py-14"><div className="mx-auto max-w-4xl">
+    <Link href="/admin/projects" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← Referans Projeler</Link>
+    <div className="mt-10 border-b border-neutral-300 pb-8"><p className="text-[9px] uppercase tracking-[0.25em] text-neutral-500">Referans Proje</p><h1 className="mt-3 text-4xl font-light tracking-tight">{project.name || project.publicTitle || project.projectNo}</h1><p className="mt-2 text-sm text-neutral-500">{project.projectNo}</p></div>
+
+    <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Fotoğraflar</p><h2 className="mt-2 text-2xl font-light">{mediaCount} fotoğraf hazır</h2><p className="mt-2 text-sm text-neutral-500">Yükle, yerini seç ve sırasını belirle.</p></div><Link href={`/admin/projects/${project.id}/media`} className="inline-flex rounded-full bg-black px-5 py-3 text-sm text-white">Fotoğrafları Yönet →</Link></div></section>
+
+    <section className="mt-7 border border-neutral-300 bg-[#faf9f6] p-7"><div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between"><div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Yayın</p><h2 className="mt-2 text-2xl font-light">Hazırsa yayına al</h2><p className="mt-2 text-sm text-neutral-500">Sadece başlık, kısa özet ve yayın durumu yeterli.</p></div><label className="flex items-center gap-3 border border-neutral-300 px-4 py-3 text-sm"><input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} className="h-4 w-4"/><span>{published ? "Yayında" : "Taslak"}</span></label></div>
+      <div className="mt-7 space-y-5"><Field label="Başlık" value={title} onChange={setTitle} placeholder="Proje başlığı"/><Field label="Kısa Özet" value={summary} onChange={setSummary} placeholder="İşin kapsamını 2-4 cümlede anlatın." multiline/></div>
+      {error && <p className="mt-5 text-xs text-red-700">{error}</p>}
+      <div className="mt-7 flex justify-end border-t border-neutral-200 pt-6"><button type="button" onClick={save} disabled={saving} className="rounded-full bg-black px-6 py-3 text-sm text-white disabled:opacity-50">{saving ? "Kaydediliyor..." : "Kaydet ve Yayına Al →"}</button></div>
+    </section>
+  </div></main>;
 }
-function Field({label,value,onChange,placeholder,multiline=false}:{label:string;value:string;onChange:(value:string)=>void;placeholder:string;multiline?:boolean}){return <div><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">{label}</label>{multiline?<textarea value={value} onChange={(e)=>onChange(e.target.value)} placeholder={placeholder} rows={4} className="mt-2 w-full resize-y border border-neutral-400 bg-transparent px-4 py-3 text-sm outline-none"/>:<input value={value} onChange={(e)=>onChange(e.target.value)} placeholder={placeholder} className="mt-2 w-full border border-neutral-400 bg-transparent px-4 py-3 text-sm outline-none"/>}</div>}
-function ArchiveField({title,value,onChange,placeholder,help}:{title:string;value:string;onChange:(value:string)=>void;placeholder:string;help:string}){return <div><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">{title}</label><textarea value={value} onChange={(e)=>onChange(e.target.value)} placeholder={placeholder} rows={5} className="mt-2 w-full resize-y border border-neutral-400 bg-transparent px-4 py-3 text-sm outline-none"/><p className="mt-2 text-xs leading-5 text-neutral-400">{help}</p></div>}
-function InfoCard({title,children}:{title:string;children:React.ReactNode}){return <section className="border border-neutral-300 bg-[#faf9f6] p-7"><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">{title}</p><div className="mt-5">{children}</div></section>}
-function InfoRow({label,value}:{label:string;value:string}){return <div className="flex justify-between gap-6 border-b border-neutral-200 py-4 last:border-b-0"><span className="text-[9px] uppercase tracking-[0.15em] text-neutral-500">{label}</span><span className="max-w-[65%] text-right text-sm text-neutral-800">{value||"-"}</span></div>}
-function ProcessStep({number,title,active}:{number:string;title:string;active:boolean}){return <div className={`border p-5 ${active?"border-neutral-500 bg-[#eee9dd]":"border-neutral-200 bg-transparent"}`}><p className="text-[9px] tracking-[0.2em] text-neutral-500">{number}</p><p className="mt-3 text-sm">{title}</p></div>}
+
+function Field({ label, value, onChange, placeholder, multiline = false }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; multiline?: boolean }) {
+  return <div><label className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">{label}</label>{multiline ? <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={6} className="mt-2 w-full resize-y border border-neutral-400 bg-transparent px-4 py-3 text-sm outline-none" /> : <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="mt-2 w-full border border-neutral-400 bg-transparent px-4 py-3 text-sm outline-none" />}</div>;
+}
