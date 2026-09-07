@@ -6,7 +6,19 @@ export async function GET() {
     const projects = await prisma.project.findMany({
       where: { published: true },
       orderBy: { createdAt: "desc" },
-      select: { id: true, projectNo: true, category: true, publicTitle: true, publicSummary: true, coverImageUrl: true, galleryImages: true, applicationProjects: true, workmanshipArchive: true, status: true },
+      select: {
+        id: true,
+        projectNo: true,
+        category: true,
+        publicTitle: true,
+        publicSummary: true,
+        status: true,
+        media: {
+          where: { placement: { in: ["PROJE", "INSAI"] } },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          select: { id: true, url: true, placement: true, sortOrder: true },
+        },
+      },
     });
     return NextResponse.json({ success: true, data: projects });
   } catch (error) {
