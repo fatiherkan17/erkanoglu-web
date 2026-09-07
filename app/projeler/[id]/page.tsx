@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
-type Media = { id: number; url: string; originalName: string; placement: "PROJE" | "INSAI" | "BEKLEMEDE"; sortOrder: number };
+type Media = {
+  id: number;
+  url: string;
+  originalName: string;
+  placement: string;
+  sortOrder: number;
+};
 type PublicProject = {
   id: number;
   projectNo: string;
@@ -25,6 +31,9 @@ const categoryLabels: Record<string, string> = {
   KENTSEL_DONUSUM: "Kentsel Dönüşüm",
   TADILAT_RENOVASYON: "Tadilat / Renovasyon",
 };
+
+const projectPlacements = new Set(["PROJE", "BEKLEMEDE", "KAPAK", "GALERI"]);
+const constructionPlacements = new Set(["INSAI", "IMALAT", "UYGULAMA"]);
 
 export default function PublicProjectDetailPage() {
   const params = useParams();
@@ -49,9 +58,10 @@ export default function PublicProjectDetailPage() {
   if (loading) return <main className="min-h-screen bg-[#f4f2ed] px-6 py-20 text-sm text-black/45">Proje yükleniyor...</main>;
   if (!project) return <main className="min-h-screen bg-[#f4f2ed] px-6 py-20"><div className="mx-auto max-w-5xl"><Link href="/projeler" className="text-xs uppercase tracking-[0.2em] text-black/45">← Referans Projeler</Link><p className="mt-14 text-sm text-red-700">{error || "Proje bulunamadı."}</p></div></main>;
 
-  const projectPhotos = project.media.filter((item) => item.placement === "PROJE" || item.placement === "BEKLEMEDE");
-  const constructionPhotos = project.media.filter((item) => item.placement === "INSAI");
-  const cover = projectPhotos[0]?.url || project.media[0]?.url || null;
+  const ordered = [...project.media].sort((a, b) => a.sortOrder - b.sortOrder);
+  const projectPhotos = ordered.filter((item) => projectPlacements.has(item.placement));
+  const constructionPhotos = ordered.filter((item) => constructionPlacements.has(item.placement));
+  const cover = projectPhotos[0]?.url || ordered[0]?.url || null;
 
   return (
     <main className="min-h-screen bg-[#f4f2ed] text-[#151515]">
