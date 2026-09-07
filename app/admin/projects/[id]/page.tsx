@@ -56,10 +56,8 @@ export default function ProjectDetailPage() {
       if (!mediaResponse.ok) throw new Error(mediaResult?.message || "Fotoğraflar alınamadı.");
       const media = (mediaResult?.data?.media || []) as Media[];
       const ordered = [...media].sort((a, b) => a.sortOrder - b.sortOrder);
-      const cover = ordered.find((item) => item.placement === "KAPAK");
-      const gallery = ordered.filter((item) => item.placement === "GALERI").map((item) => item.url);
-      const applications = ordered.filter((item) => item.placement === "UYGULAMA").map((item) => ({ title: item.originalName, url: item.url }));
-      const workmanship = ordered.filter((item) => item.placement === "IMALAT").map((item) => ({ title: item.originalName, url: item.url, category: "İmalat" }));
+      const projectPhotos = ordered.filter((item) => item.placement === "PROJE").map((item) => item.url);
+      const coverImageUrl = projectPhotos[0] || null;
       const response = await fetch(`/api/projects/${project.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -67,10 +65,10 @@ export default function ProjectDetailPage() {
           published,
           publicTitle: title.trim() || project.name || project.projectNo,
           publicSummary: summary.trim() || null,
-          coverImageUrl: cover?.url || null,
-          galleryImages: JSON.stringify(gallery),
-          applicationProjects: JSON.stringify(applications),
-          workmanshipArchive: JSON.stringify(workmanship),
+          coverImageUrl,
+          galleryImages: JSON.stringify(projectPhotos),
+          applicationProjects: JSON.stringify([]),
+          workmanshipArchive: JSON.stringify([]),
         }),
       });
       const result = await response.json();
