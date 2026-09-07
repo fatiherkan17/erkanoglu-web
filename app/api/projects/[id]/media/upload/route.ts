@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             originalName: typeof payload.originalName === "string" ? payload.originalName : blob.pathname.split("/").pop() || blob.pathname,
             contentType: blob.contentType || "image/jpeg",
             size: Number.isInteger(payload.size) ? payload.size : 0,
-            placement: "BEKLEMEDE",
+            placement: "PROJE",
           },
         });
       },
