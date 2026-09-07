@@ -30,12 +30,12 @@ export default function ProjectMediaPage() {
   const [media, setMedia] = useState<Media[]>([]);
   const [projectName, setProjectName] = useState("Proje");
   const [draggingFile, setDraggingFile] = useState(false);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingOrder, setSavingOrder] = useState(false);
-  const [orderDirty, setOrderDirty] = useState(false);
 
   async function loadMedia() {
     if (!projectId) return;
@@ -46,7 +46,6 @@ export default function ProjectMediaPage() {
       if (!response.ok) throw new Error(result.message || "Medya alınamadı.");
       setMedia(result.data.media || []);
       setProjectName(result.data.project?.publicTitle || result.data.project?.name || "Proje");
-      setOrderDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Medya alınamadı.");
     } finally {
@@ -82,61 +81,37 @@ export default function ProjectMediaPage() {
     await loadMedia();
   }
 
-  async function changePlacement(id: number, placement: Media["placement"]) {
-    const response = await fetch(`/api/projects/${projectId}/media`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mediaId: id, placement }),
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      setError(result.message || "Fotoğraf türü güncellenemedi.");
-      return;
-    }
-    setMedia((items) => items.map((item) => (item.id === id ? result.data : item)));
-  }
-
-  function changePhotoNumber(id: number, value: string) {
-    const number = Number(value);
-    setMedia((items) =>
-      items.map((item) => (item.id === id ? { ...item, sortOrder: Number.isInteger(number) && number > 0 ? number - 1 : -1 } : item)),
-    );
-    setOrderDirty(true);
-    setError("");
-  }
-
-  async function saveManualOrder() {
-    const invalid = media.some((item) => !Number.isInteger(item.sortOrder) || item.sortOrder < 0);
-    if (invalid) {
-      setError("Her fotoğrafa 1 veya daha büyük bir sıra numarası vermelisin.");
-      return;
-    }
-
-    const numbers = media.map((item) => item.sortOrder + 1);
-    if (new Set(numbers).size !== numbers.length) {
-      setError("Aynı sıra numarasını iki fotoğrafa veremezsin.");
-      return;
-    }
-
+  async function saveOrder(items: Media[]) {
     try {
       setSavingOrder(true);
-      setError("");
-      const ordered = [...media].sort((a, b) => a.sortOrder - b.sortOrder);
       const response = await fetch(`/api/projects/${projectId}/media`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: ordered.map((item) => item.id) }),
+        body: JSON.stringify({ orderedIds: items.map((item) => item.id) }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Sıralama kaydedilemedi.");
       setMedia(result.data);
-      setOrderDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sıralama kaydedilemedi.");
       await loadMedia();
     } finally {
       setSavingOrder(false);
+      setDraggingId(null);
     }
+  }
+
+  function reorder(draggedId: number, targetId: number) {
+    if (draggedId === targetId || savingOrder) return;
+    const current = [...media];
+    const from = current.findIndex((item) => item.id === draggedId);
+    const to = current.findIndex((item) => item.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = current.splice(from, 1);
+    current.splice(to, 0, moved);
+    const normalized = current.map((item, index) => ({ ...item, sortOrder: index }));
+    setMedia(normalized);
+    void saveOrder(normalized);
   }
 
   async function deleteMedia(item: Media) {
@@ -161,7 +136,7 @@ export default function ProjectMediaPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f5f0] px-6 py-12">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <Link href={`/admin/projects/${projectId}`} className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">← Projeye Dön</Link>
 
         <div className="mt-8 border-b border-neutral-300 pb-7">
@@ -169,7 +144,7 @@ export default function ProjectMediaPage() {
           <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="text-3xl font-light tracking-tight">{projectName}</h1>
-              <p className="mt-2 text-sm text-neutral-500">Fotoğrafları yükle ve her fotoğrafa istediğin sıra numarasını ver.</p>
+              <p className="mt-2 text-sm text-neutral-500">Fotoğrafları küçük kartlar halinde sürükleyerek sırasını değiştir.</p>
             </div>
             <div className="text-xs text-neutral-500">{media.length} fotoğraf</div>
           </div>
@@ -192,33 +167,50 @@ export default function ProjectMediaPage() {
 
         {error && <p className="mt-5 text-xs text-red-700">{error}</p>}
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
-          <section>
-            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div><p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Fotoğraf Sıralaması</p><p className="mt-1 text-xs text-neutral-400">Numarayı kendin belirle. 1 en başta, 2 ikinci sırada olacak.</p></div>
-              <button type="button" onClick={() => void saveManualOrder()} disabled={!orderDirty || savingOrder || uploading || Boolean(deletingId)} className="rounded-full bg-[#151515] px-5 py-3 text-sm text-white disabled:opacity-40">
-                {savingOrder ? "Sıra kaydediliyor..." : "Sıralamayı Kaydet →"}
-              </button>
+        <section className="mt-8">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Fotoğraf Sırası</p>
+              <p className="mt-1 text-xs text-neutral-400">Küçük fotoğrafı tutup başka bir fotoğrafın üstüne bırak. Bıraktığında sıra otomatik kaydolur.</p>
             </div>
+            {savingOrder && <span className="text-xs text-neutral-400">Sıra kaydediliyor...</span>}
+          </div>
 
-            {loading ? <div className="border border-neutral-300 bg-[#faf9f6] p-8 text-sm text-neutral-500">Fotoğraflar yükleniyor...</div> : media.length === 0 ? <div className="border border-neutral-300 bg-[#faf9f6] p-8 text-sm text-neutral-500">Henüz fotoğraf yüklenmedi.</div> : <div className="space-y-4">{media.map((item) => {
-              const displayNumber = item.sortOrder >= 0 ? item.sortOrder + 1 : "";
-              return <article key={item.id} className="grid grid-cols-[72px_150px_1fr] items-center gap-4 border border-neutral-300 bg-[#faf9f6] p-3">
-                <label className="flex flex-col items-center gap-2 text-[9px] uppercase tracking-[0.15em] text-neutral-400">
-                  Sıra
-                  <input type="number" min={1} value={displayNumber} onChange={(event) => changePhotoNumber(item.id, event.target.value)} disabled={Boolean(deletingId) || uploading} className="w-16 border border-neutral-400 bg-white px-2 py-2 text-center text-sm text-neutral-900 outline-none" />
-                </label>
-                <div className="aspect-[4/3] overflow-hidden bg-neutral-100"><img src={item.url} alt={item.originalName} className="h-full w-full object-cover" loading="lazy"/></div>
-                <div className="min-w-0"><p className="truncate text-sm" title={item.originalName}>{item.originalName}</p><p className="mt-1 text-[10px] text-neutral-400">{formatSize(item.size)}</p><div className="mt-3 flex flex-wrap items-center gap-2"><select value={item.placement} onChange={(event) => void changePlacement(item.id, event.target.value as Media["placement"])} disabled={Boolean(deletingId)} className="border border-neutral-400 bg-transparent px-3 py-2 text-xs"><option value="PROJE">Proje Fotoğrafı</option><option value="INSAI">İnşai Faaliyet</option></select><button type="button" onClick={() => void deleteMedia(item)} disabled={Boolean(deletingId) || uploading} className="border border-red-300 px-3 py-2 text-xs text-red-700 disabled:opacity-50">{deletingId === item.id ? "Siliniyor..." : "Sil"}</button></div></div>
-              </article>;
-            })}</div>}
-          </section>
-
-          <aside className="h-fit border border-neutral-300 bg-[#faf9f6] p-6">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500">Nasıl kullanacaksın?</p>
-            <div className="mt-5 space-y-5 text-sm leading-6 text-neutral-600"><div><strong className="text-neutral-900">01</strong> · Fotoğrafları yükle.</div><div><strong className="text-neutral-900">02</strong> · Her fotoğrafa istediğin numarayı ver.</div><div><strong className="text-neutral-900">03</strong> · Örneğin yıkım <b>1</b>, temel <b>2</b>, donatı <b>3</b>, kalıp <b>4</b>, beton <b>5</b> şeklinde.</div><div><strong className="text-neutral-900">04</strong> · <b>Sıralamayı Kaydet</b> dediğinde site bu sırayı kullanır.</div></div>
-          </aside>
-        </div>
+          {loading ? (
+            <div className="border border-neutral-300 bg-[#faf9f6] p-8 text-sm text-neutral-500">Fotoğraflar yükleniyor...</div>
+          ) : media.length === 0 ? (
+            <div className="border border-neutral-300 bg-[#faf9f6] p-8 text-sm text-neutral-500">Henüz fotoğraf yüklenmedi.</div>
+          ) : (
+            <div className="flex flex-wrap gap-4">
+              {media.map((item, index) => (
+                <article
+                  key={item.id}
+                  draggable
+                  onDragStart={() => setDraggingId(item.id)}
+                  onDragEnd={() => setDraggingId(null)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (draggingId !== null) reorder(draggingId, item.id);
+                  }}
+                  className={`w-[150px] shrink-0 rounded-sm border bg-[#faf9f6] p-2 shadow-sm transition ${draggingId === item.id ? "opacity-40" : "border-neutral-300"}`}
+                  title="Sürükleyip yerini değiştir"
+                >
+                  <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
+                    <img src={item.url} alt={item.originalName} className="h-full w-full object-cover" loading="lazy" />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-neutral-400">#{index + 1}</span>
+                    <button type="button" onClick={() => void deleteMedia(item)} disabled={Boolean(deletingId) || uploading || savingOrder} className="text-[10px] text-red-700 disabled:opacity-50">
+                      {deletingId === item.id ? "Siliniyor" : "Sil"}
+                    </button>
+                  </div>
+                  <p className="mt-1 truncate text-[10px] text-neutral-500" title={item.originalName}>{item.originalName}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
