@@ -15,7 +15,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/api/public-projects" && request.method === "GET") {
+  if ((pathname === "/api/public-projects" || pathname.startsWith("/api/public-projects/")) && request.method === "GET") {
     return NextResponse.next();
   }
 
