@@ -14,7 +14,7 @@ export async function GET() {
         publicSummary: true,
         status: true,
         media: {
-          where: { placement: { in: ["PROJE", "INSAI"] } },
+          where: { placement: { in: ["PROJE", "INSAI", "BEKLEMEDE"] } },
           orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
           select: { id: true, url: true, placement: true, sortOrder: true },
         },
