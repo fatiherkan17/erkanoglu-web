@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
-type Media = { id: number; url: string; originalName: string; placement: "PROJE" | "INSAI"; sortOrder: number };
+type Media = { id: number; url: string; originalName: string; placement: "PROJE" | "INSAI" | "BEKLEMEDE"; sortOrder: number };
 type PublicProject = {
   id: number;
   projectNo: string;
@@ -49,7 +49,7 @@ export default function PublicProjectDetailPage() {
   if (loading) return <main className="min-h-screen bg-[#f4f2ed] px-6 py-20 text-sm text-black/45">Proje yükleniyor...</main>;
   if (!project) return <main className="min-h-screen bg-[#f4f2ed] px-6 py-20"><div className="mx-auto max-w-5xl"><Link href="/projeler" className="text-xs uppercase tracking-[0.2em] text-black/45">← Referans Projeler</Link><p className="mt-14 text-sm text-red-700">{error || "Proje bulunamadı."}</p></div></main>;
 
-  const projectPhotos = project.media.filter((item) => item.placement === "PROJE");
+  const projectPhotos = project.media.filter((item) => item.placement === "PROJE" || item.placement === "BEKLEMEDE");
   const constructionPhotos = project.media.filter((item) => item.placement === "INSAI");
   const cover = projectPhotos[0]?.url || project.media[0]?.url || null;
 
