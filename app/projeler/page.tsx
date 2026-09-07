@@ -68,21 +68,26 @@ export default function ProjectsPage() {
         {loading && <div className="py-16 text-sm text-black/45">Projeler yükleniyor...</div>}
         {!loading && projects.length === 0 && <div className="border border-black/10 bg-white/30 p-10"><p className="max-w-2xl text-lg leading-8 text-black/55">Henüz yayınlanmış referans iş bulunmuyor.</p></div>}
         {!loading && projects.length > 0 && (
-          <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-8">
             {projects.map((project) => {
               const ordered = [...(project.media || [])].sort((a, b) => a.sortOrder - b.sortOrder);
               const projectImage = ordered.find((item) => item.placement === "PROJE") || ordered[0];
               return (
-                <Link key={project.id} href={`/projeler/${project.id}`} className="group overflow-hidden border border-black/10 bg-white/40 transition hover:-translate-y-1">
-                  <article>
-                    <div className="aspect-[16/10] overflow-hidden bg-black/5">
-                      {projectImage ? <img src={projectImage.url} alt={project.publicTitle || `${project.projectNo} projesi`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" /> : <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.2em] text-black/25">Görsel hazırlanıyor</div>}
+                <Link key={project.id} href={`/projeler/${project.id}`} className="group block overflow-hidden border border-black/10 bg-white/40 transition hover:-translate-y-1">
+                  <article className="grid lg:grid-cols-[1.18fr_0.82fr]">
+                    <div className="aspect-[16/10] overflow-hidden bg-black/5 lg:aspect-auto lg:min-h-[420px]">
+                      {projectImage ? <img src={projectImage.url} alt={project.publicTitle || `${project.projectNo} projesi`} className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" /> : <div className="flex h-full min-h-[320px] items-center justify-center text-xs uppercase tracking-[0.2em] text-black/25">Görsel hazırlanıyor</div>}
                     </div>
-                    <div className="p-7 md:p-8">
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-black/35">{categoryLabels[project.category] ?? project.category}</div>
-                      <h2 className="mt-4 text-3xl font-medium tracking-[-0.035em]">{project.publicTitle || project.projectNo}</h2>
-                      {project.publicSummary && <p className="mt-4 text-sm leading-7 text-black/55">{project.publicSummary}</p>}
-                      <div className="mt-7 text-xs uppercase tracking-[0.2em] text-black/45">İşi incele →</div>
+                    <div className="flex flex-col justify-between p-8 lg:p-12">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.2em] text-black/35">{categoryLabels[project.category] ?? project.category}</div>
+                        <h2 className="mt-5 text-4xl font-medium tracking-[-0.04em] md:text-5xl">{project.publicTitle || project.projectNo}</h2>
+                        {project.publicSummary && <p className="mt-6 max-w-xl text-base leading-8 text-black/55">{project.publicSummary}</p>}
+                      </div>
+                      <div className="mt-10 flex items-center justify-between border-t border-black/10 pt-6 text-xs uppercase tracking-[0.2em] text-black/45">
+                        <span>Referans İş</span>
+                        <span className="text-black">İşi incele →</span>
+                      </div>
                     </div>
                   </article>
                 </Link>
@@ -100,7 +105,7 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      <footer className="bg-[#151515] text-white/40"><div className="mx-auto flex max-w-7xl flex-col gap-3 border-t border-white/10 px-6 py-8 text-sm md:flex-row md:justify-between lg:px-10"><span className="tracking-[0.2em] text-white">ERKANOĞLU</span><span>Mimarlık · Mühendislik · Yapı · Uygulama</span><span>Çanakkale · Türkiye</span></div></footer>
+      <footer className="bg-[#151515] text-white/40"><div className="mx-auto flex max-w-7xl flex-col gap-3 border-t border-white/10 px-6 py-8 text-sm md:flex-row md:justify-between lg:px-10"><span className="tracking-[0.2em] text-white">ERKANOĞLU</span><span>Mimarlık · Mühendislik · Yapı</span><span>Çanakkale · Türkiye</span></div></footer>
     </main>
   );
 }
