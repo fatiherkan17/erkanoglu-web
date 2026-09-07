@@ -21,7 +21,6 @@ export async function GET(_request: Request, { params }: Params) {
         publicSummary: true,
         status: true,
         media: {
-          where: { placement: { in: ["PROJE", "INSAI", "BEKLEMEDE"] } },
           orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
           select: { id: true, url: true, originalName: true, placement: true, sortOrder: true },
         },
