@@ -16,10 +16,13 @@ model ProjectRequest {
   neighborhood String
 
   buildingType    String
-  projectStage    String
+  projectStage   String
   approximateArea String?
   interestAreas   String
   description     String?
+
+  parcelData Json?
+  aiDraft    Json?
 
   status         String    @default("YENI")
   source         String    @default("direct")
