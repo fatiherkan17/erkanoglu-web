@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import AIProjectDraft from "../../components/AIProjectDraft";
 
 type MeetingNote = {
   id: number;
@@ -260,6 +261,8 @@ export default function ProjectRequestDetailPage() {
           </div>
           <div className="mt-6 flex justify-end"><button type="button" onClick={saveLeadInfo} disabled={savingLead || savingStatus || savingMeeting || creatingProject} className="border border-white/30 px-5 py-3 text-[10px] font-semibold tracking-[0.16em] hover:bg-white hover:text-black disabled:opacity-40">{savingLead ? "KAYDEDİLİYOR..." : "LEAD BİLGİLERİNİ KAYDET →"}</button></div>
         </section>
+
+        <AIProjectDraft requestId={id} />
 
         <section className="mt-8 border border-black/10 bg-white/30 p-6 md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
