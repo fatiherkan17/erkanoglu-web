@@ -1,78 +1,10 @@
-export type FloorPlanRoom = {
-  name: string;
-  xM: number;
-  yM: number;
-  widthM: number;
-  depthM: number;
-  areaM2?: number | null;
-};
-
-export type FloorPlan = {
-  widthM: number;
-  depthM: number;
-  orientation?: string;
-  rooms: FloorPlanRoom[];
-  notes?: string[];
-};
-
-function finite(value: unknown, fallback: number) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
+export type FloorPlanRoom = { name: string; xM: number; yM: number; widthM: number; depthM: number; areaM2?: number | null };
+export type FloorPlan = { widthM: number; depthM: number; orientation?: string; rooms: FloorPlanRoom[]; notes?: string[] };
+function finite(value: unknown, fallback: number) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
 export default function AIPlanPreview({ plan, title = "Mimari yerleşim taslağı" }: { plan?: FloorPlan | null; title?: string }) {
   if (!plan) return null;
-  const width = Math.max(6, finite(plan.widthM, 20));
-  const depth = Math.max(6, finite(plan.depthM, 12));
-  const rooms = (Array.isArray(plan.rooms) ? plan.rooms : [])
-    .map((room) => ({
-      ...room,
-      xM: Math.max(0, Math.min(width, finite(room.xM, 0))),
-      yM: Math.max(0, Math.min(depth, finite(room.yM, 0))),
-      widthM: Math.max(1, Math.min(width, finite(room.widthM, 1))),
-      depthM: Math.max(1, Math.min(depth, finite(room.depthM, 1))),
-    }))
-    .map((room) => ({ ...room, widthM: Math.min(room.widthM, width - room.xM), depthM: Math.min(room.depthM, depth - room.yM) }))
-    .filter((room) => room.widthM > 0.8 && room.depthM > 0.8 && room.name);
-
-  const pad = 42;
-  const scale = Math.min(760 / width, 520 / depth);
-  const svgWidth = width * scale + pad * 2;
-  const svgHeight = depth * scale + pad * 2;
-
-  return (
-    <div className="border-t border-black/10 pt-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.18em] text-black/35">3 · MİMARİ ÖN YERLEŞİM</p>
-          <h3 className="mt-2 text-2xl font-light">{title}</h3>
-        </div>
-        <span className="text-[10px] text-black/40">{width.toFixed(1)} × {depth.toFixed(1)} m · {plan.orientation || "Yön belirtilmedi"}</span>
-      </div>
-
-      <div className="mt-5 overflow-auto border border-black/15 bg-white p-3">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="min-w-[680px] w-full" role="img" aria-label={title}>
-          <rect x={pad} y={pad} width={width * scale} height={depth * scale} fill="white" stroke="black" strokeWidth="3" />
-          {rooms.map((room, index) => {
-            const x = pad + room.xM * scale;
-            const y = pad + room.yM * scale;
-            const w = room.widthM * scale;
-            const h = room.depthM * scale;
-            const fontSize = Math.max(10, Math.min(18, Math.min(w, h) / 4));
-            return (
-              <g key={`${room.name}-${index}`}>
-                <rect x={x} y={y} width={w} height={h} fill="white" stroke="black" strokeWidth="1.7" />
-                <text x={x + w / 2} y={y + h / 2 - 5} textAnchor="middle" dominantBaseline="middle" fontSize={fontSize} fill="black" fontFamily="Arial, sans-serif">{room.name.length > 22 ? `${room.name.slice(0, 21)}…` : room.name}</text>
-                <text x={x + w / 2} y={y + h / 2 + fontSize} textAnchor="middle" dominantBaseline="middle" fontSize={Math.max(8, fontSize - 2)} fill="#555" fontFamily="Arial, sans-serif">{room.widthM.toFixed(1)} × {room.depthM.toFixed(1)} m{room.areaM2 != null ? ` · ${Number(room.areaM2).toFixed(0)} m²` : ""}</text>
-              </g>
-            );
-          })}
-          <text x={pad + (width * scale) / 2} y={24} textAnchor="middle" fontSize="12" fill="black" fontFamily="Arial, sans-serif">KUZEY ↑</text>
-          <text x={pad + (width * scale) / 2} y={svgHeight - 10} textAnchor="middle" fontSize="10" fill="#666" fontFamily="Arial, sans-serif">Şematik ön yerleşim · yaklaşık ölçüler</text>
-        </svg>
-      </div>
-
-      {rooms.length === 0 && <p className="mt-3 text-sm text-black/45">Yerleşim odaları üretilemedi.</p>}
-      {plan.notes?.length ? <div className="mt-4 space-y-2 text-sm leading-6 text-black/55">{plan.notes.map((note, index) => <p key={index}>· {note}</p>)}</div> : null}
-    </div>
-  );
+  const width = Math.max(6, finite(plan.widthM, 20)); const depth = Math.max(6, finite(plan.depthM, 12));
+  const rooms = (Array.isArray(plan.rooms) ? plan.rooms : []).map((room) => ({ ...room, xM: Math.max(0, Math.min(width, finite(room.xM, 0))), yM: Math.max(0, Math.min(depth, finite(room.yM, 0))), widthM: Math.max(1, Math.min(width, finite(room.widthM, 1))), depthM: Math.max(1, Math.min(depth, finite(room.depthM, 1))) })).map((room) => ({ ...room, widthM: Math.min(room.widthM, width - room.xM), depthM: Math.min(room.depthM, depth - room.yM) })).filter((room) => room.widthM > 0.8 && room.depthM > 0.8 && room.name);
+  const pad = 42, scale = Math.min(760 / width, 520 / depth), svgWidth = width * scale + pad * 2, svgHeight = depth * scale + pad * 2;
+  return <div className="border-t border-black/10 pt-6"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[9px] uppercase tracking-[0.18em] text-black/35">3 · MİMARİ ÖN YERLEŞİM</p><h3 className="mt-2 text-2xl font-light">{title}</h3></div><span className="text-[10px] text-black/40">{width.toFixed(1)} × {depth.toFixed(1)} m · {plan.orientation || "Yön belirtilmedi"}</span></div><div className="mt-5 overflow-auto border border-black/15 bg-white p-3"><svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="min-w-[680px] w-full" role="img" aria-label={title}><rect x={pad} y={pad} width={width * scale} height={depth * scale} fill="white" stroke="black" strokeWidth="3" />{rooms.map((room,index)=>{const x=pad+room.xM*scale,y=pad+room.yM*scale,w=room.widthM*scale,h=room.depthM*scale,fontSize=Math.max(10,Math.min(18,Math.min(w,h)/4));return <g key={`${room.name}-${index}`}><rect x={x} y={y} width={w} height={h} fill="white" stroke="black" strokeWidth="1.7"/><text x={x+w/2} y={y+h/2-5} textAnchor="middle" dominantBaseline="middle" fontSize={fontSize} fill="black" fontFamily="Arial, sans-serif">{room.name.length>22?`${room.name.slice(0,21)}…`:room.name}</text><text x={x+w/2} y={y+h/2+fontSize} textAnchor="middle" dominantBaseline="middle" fontSize={Math.max(8,fontSize-2)} fill="#555" fontFamily="Arial, sans-serif">{room.widthM.toFixed(1)} × {room.depthM.toFixed(1)} m{room.areaM2!=null?` · ${Number(room.areaM2).toFixed(0)} m²`:""}</text></g>})}<text x={pad+(width*scale)/2} y={24} textAnchor="middle" fontSize="12" fill="black" fontFamily="Arial, sans-serif">KUZEY ↑</text><text x={pad+(width*scale)/2} y={svgHeight-10} textAnchor="middle" fontSize="10" fill="#666" fontFamily="Arial, sans-serif">Şematik ön yerleşim · yaklaşık ölçüler</text></svg></div>{rooms.length===0&&<p className="mt-3 text-sm text-black/45">Yerleşim odaları üretilemedi.</p>}{plan.notes?.length?<div className="mt-4 space-y-2 text-sm leading-6 text-black/55">{plan.notes.map((note,index)=><p key={index}>· {note}</p>)}</div>:null}</div>;
 }
