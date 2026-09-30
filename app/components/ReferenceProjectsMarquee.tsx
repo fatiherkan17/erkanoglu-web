@@ -49,13 +49,13 @@ export default function ReferenceProjectsMarquee() {
 
   return (
     <section id="referans-projeler" className="overflow-hidden border-b border-black/10 bg-[#f4f2ed]">
-      <div className="mx-auto max-w-[1500px] px-6 py-7 lg:px-10 lg:py-9">
-        <div className="mb-5 flex items-center justify-between gap-6">
+      <div className="mx-auto max-w-[1500px] px-6 py-6 lg:px-10 lg:py-7">
+        <div className="mb-4 flex items-center justify-between gap-6">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-black/40">
               Referans Projeler
             </p>
-            <h2 className="mt-1 max-w-xl text-xl font-medium leading-none tracking-[-0.03em] md:text-2xl">
+            <h2 className="mt-1 max-w-xl text-lg font-medium leading-none tracking-[-0.025em] md:text-xl">
               Seçili işler. <span className="text-black/30">Fikirden uygulamaya.</span>
             </h2>
           </div>
@@ -108,11 +108,11 @@ export default function ReferenceProjectsMarquee() {
                       </div>
                     </div>
 
-                    <div className="border-x border-b border-black/10 bg-white/50 px-3 py-2">
+                    <div className="border-x border-b border-black/10 bg-white/50 px-3 py-2.5">
                       <p className="text-[9px] uppercase tracking-[0.2em] text-black/35">
                         {project.projectNo}
                       </p>
-                      <h3 className="mt-1 text-sm font-medium tracking-[-0.015em]">
+                      <h3 className="mt-1 text-sm font-medium tracking-[-0.015em] truncate">
                         {project.publicTitle || project.projectNo}
                       </h3>
                       {project.publicSummary && (
@@ -130,7 +130,7 @@ export default function ReferenceProjectsMarquee() {
 
         <Link
           href="/projeler"
-          className="mt-4 inline-flex border-b border-black/30 pb-2 text-xs font-medium uppercase tracking-[0.16em] md:hidden"
+          className="mt-3 inline-flex border-b border-black/30 pb-2 text-xs font-medium uppercase tracking-[0.16em] md:hidden"
         >
           Tüm projeler →
         </Link>
@@ -144,8 +144,8 @@ export default function ReferenceProjectsMarquee() {
         .reference-track {
           display: flex;
           width: max-content;
-          gap: 10px;
-          animation: reference-scroll 42s linear infinite;
+          gap: 12px;
+          animation: reference-scroll 46s linear infinite;
         }
 
         .reference-marquee:hover .reference-track {
@@ -153,13 +153,13 @@ export default function ReferenceProjectsMarquee() {
         }
 
         .reference-card {
-          width: min(58vw, 220px);
+          width: 210px;
           flex: 0 0 auto;
         }
 
         @media (min-width: 768px) {
           .reference-card {
-            width: min(17vw, 250px);
+            width: 210px;
           }
         }
 
