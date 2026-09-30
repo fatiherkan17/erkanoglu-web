@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReferenceProjectsMarquee from "./components/ReferenceProjectsMarquee";
 
 const projectTypes = ["Konut", "Villa", "Ticari Yapılar", "Karma Kullanım", "Endüstriyel Yapılar", "Mevcut Yapılar"];
 
@@ -36,6 +37,8 @@ export default function HomePage() {
           <div className="mt-12 flex flex-col justify-between gap-8 md:flex-row md:items-end"><p className="max-w-2xl text-lg leading-8 text-white/75">Erkanoğlu; mimarlık, mühendislik, danışmanlık, yapım, tadilat ve şantiye yönetimini aynı proje anlayışı içerisinde buluşturur.</p><a href="#hizmetler" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/40 text-2xl text-white transition hover:bg-white hover:text-black">↓</a></div>
         </div></div>
       </section>
+
+      <ReferenceProjectsMarquee />
 
       <section id="hizmetler" className="border-b border-black/10"><div className="mx-auto max-w-7xl px-6 py-28 lg:px-10 lg:py-40"><div className="grid gap-16 lg:grid-cols-[0.65fr_1.35fr]"><div><span className="text-xs uppercase tracking-[0.3em] text-black/40">Hizmetler</span></div><div><h2 className="max-w-5xl text-4xl font-medium leading-[1.05] tracking-[-0.045em] md:text-6xl lg:text-7xl">Bir projeyi sadece<br />çizmiyor, <span className="text-black/35">hayata geçiriyoruz.</span></h2><p className="mt-10 max-w-2xl text-lg leading-8 text-black/55">İhtiyaca göre tasarım, mühendislik, danışmanlık ve uygulama süreçlerini bir araya getiriyor; gerektiğinde çözüm ortaklarımızla birlikte tek bir proje ekibi gibi çalışıyoruz.</p><Link href="/proje-talebi" className="mt-10 inline-flex border-b border-black pb-2 text-sm font-medium">Projenizi birlikte değerlendirelim →</Link></div></div></div></section>
 
