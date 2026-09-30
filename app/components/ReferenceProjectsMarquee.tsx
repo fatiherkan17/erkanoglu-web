@@ -49,13 +49,13 @@ export default function ReferenceProjectsMarquee() {
 
   return (
     <section id="referans-projeler" className="overflow-hidden border-b border-black/10 bg-[#f4f2ed]">
-      <div className="mx-auto max-w-[1600px] px-6 py-20 lg:px-10 lg:py-28">
-        <div className="mb-12 flex items-end justify-between gap-8">
+      <div className="mx-auto max-w-[1500px] px-6 py-16 lg:px-10 lg:py-20">
+        <div className="mb-9 flex items-end justify-between gap-8">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-black/40">
               Referans Projeler
             </p>
-            <h2 className="mt-5 max-w-3xl text-4xl font-medium leading-[0.98] tracking-[-0.045em] md:text-6xl">
+            <h2 className="mt-4 max-w-3xl text-3xl font-medium leading-[1] tracking-[-0.04em] md:text-4xl lg:text-5xl">
               Fikirden gerçeğe<br />
               <span className="text-black/30">dönüşen işler.</span>
             </h2>
@@ -101,7 +101,7 @@ export default function ReferenceProjectsMarquee() {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-80" />
-                      <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between text-white">
+                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white">
                         <span className="text-[9px] uppercase tracking-[0.2em] text-white/65">
                           {categoryLabels[project.category] ?? project.category}
                         </span>
@@ -109,15 +109,15 @@ export default function ReferenceProjectsMarquee() {
                       </div>
                     </div>
 
-                    <div className="border-x border-b border-black/10 bg-white/50 p-5">
+                    <div className="border-x border-b border-black/10 bg-white/50 px-4 py-4">
                       <p className="text-[9px] uppercase tracking-[0.2em] text-black/35">
                         {project.projectNo}
                       </p>
-                      <h3 className="mt-3 text-xl font-medium tracking-[-0.025em]">
+                      <h3 className="mt-2 text-lg font-medium tracking-[-0.025em]">
                         {project.publicTitle || project.projectNo}
                       </h3>
                       {project.publicSummary && (
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-black/45">
+                        <p className="mt-1 line-clamp-1 text-xs leading-5 text-black/45">
                           {project.publicSummary}
                         </p>
                       )}
@@ -131,7 +131,7 @@ export default function ReferenceProjectsMarquee() {
 
         <Link
           href="/projeler"
-          className="mt-8 inline-flex border-b border-black/30 pb-2 text-xs font-medium uppercase tracking-[0.16em] md:hidden"
+          className="mt-7 inline-flex border-b border-black/30 pb-2 text-xs font-medium uppercase tracking-[0.16em] md:hidden"
         >
           Tüm projeler →
         </Link>
@@ -145,8 +145,8 @@ export default function ReferenceProjectsMarquee() {
         .reference-track {
           display: flex;
           width: max-content;
-          gap: 16px;
-          animation: reference-scroll 34s linear infinite;
+          gap: 14px;
+          animation: reference-scroll 38s linear infinite;
         }
 
         .reference-marquee:hover .reference-track {
@@ -154,13 +154,13 @@ export default function ReferenceProjectsMarquee() {
         }
 
         .reference-card {
-          width: min(76vw, 430px);
+          width: min(72vw, 350px);
           flex: 0 0 auto;
         }
 
         @media (min-width: 768px) {
           .reference-card {
-            width: min(39vw, 560px);
+            width: min(27vw, 390px);
           }
         }
 
