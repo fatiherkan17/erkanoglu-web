@@ -85,9 +85,9 @@ export default function ReferenceProjectsMarquee() {
                   <Link
                     key={`${project.id}-${index}`}
                     href={`/projeler/${project.id}`}
-                    className="reference-card group/card"
+                    className="reference-card group/card" style={{ width: "260px", minWidth: "260px", height: "198px" }}
                   >
-                    <div className="relative aspect-[16/9] overflow-hidden bg-[#dedbd3]">
+                    <div className="relative h-[146px] overflow-hidden bg-[#dedbd3]">
                       {image ? (
                         <img
                           src={image.url}
@@ -108,7 +108,7 @@ export default function ReferenceProjectsMarquee() {
                       </div>
                     </div>
 
-                    <div className="border-x border-b border-black/10 bg-white/50 px-3 py-2.5">
+                    <div className="flex h-[52px] flex-col justify-center border-x border-b border-black/10 bg-white/50 px-3">
                       <p className="text-[9px] uppercase tracking-[0.2em] text-black/35">
                         {project.projectNo}
                       </p>
@@ -153,13 +153,18 @@ export default function ReferenceProjectsMarquee() {
         }
 
         .reference-card {
-          width: 210px;
+          width: 260px;
+          min-width: 260px;
+          max-width: 260px;
+          height: 198px;
           flex: 0 0 auto;
         }
 
         @media (min-width: 768px) {
           .reference-card {
-            width: 210px;
+            width: 260px;
+            min-width: 260px;
+            max-width: 260px;
           }
         }
 
