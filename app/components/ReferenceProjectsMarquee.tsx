@@ -49,15 +49,14 @@ export default function ReferenceProjectsMarquee() {
 
   return (
     <section id="referans-projeler" className="overflow-hidden border-b border-black/10 bg-[#f4f2ed]">
-      <div className="mx-auto max-w-[1500px] px-6 py-16 lg:px-10 lg:py-20">
-        <div className="mb-9 flex items-end justify-between gap-8">
+      <div className="mx-auto max-w-[1500px] px-6 py-10 lg:px-10 lg:py-12">
+        <div className="mb-6 flex items-end justify-between gap-8">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-black/40">
               Referans Projeler
             </p>
-            <h2 className="mt-4 max-w-3xl text-3xl font-medium leading-[1] tracking-[-0.04em] md:text-4xl lg:text-5xl">
-              Fikirden gerçeğe<br />
-              <span className="text-black/30">dönüşen işler.</span>
+            <h2 className="mt-2 max-w-2xl text-2xl font-medium leading-none tracking-[-0.035em] md:text-3xl">
+              Seçili işler. <span className="text-black/30">Fikirden uygulamaya.</span>
             </h2>
           </div>
 
@@ -88,7 +87,7 @@ export default function ReferenceProjectsMarquee() {
                     href={`/projeler/${project.id}`}
                     className="reference-card group/card"
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden bg-[#dedbd3]">
+                    <div className="relative aspect-[16/9] overflow-hidden bg-[#dedbd3]">
                       {image ? (
                         <img
                           src={image.url}
@@ -101,7 +100,7 @@ export default function ReferenceProjectsMarquee() {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-80" />
-                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white">
+                      <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-white">
                         <span className="text-[9px] uppercase tracking-[0.2em] text-white/65">
                           {categoryLabels[project.category] ?? project.category}
                         </span>
@@ -109,15 +108,15 @@ export default function ReferenceProjectsMarquee() {
                       </div>
                     </div>
 
-                    <div className="border-x border-b border-black/10 bg-white/50 px-4 py-4">
+                    <div className="border-x border-b border-black/10 bg-white/50 px-4 py-3">
                       <p className="text-[9px] uppercase tracking-[0.2em] text-black/35">
                         {project.projectNo}
                       </p>
-                      <h3 className="mt-2 text-lg font-medium tracking-[-0.025em]">
+                      <h3 className="mt-1.5 text-base font-medium tracking-[-0.02em]">
                         {project.publicTitle || project.projectNo}
                       </h3>
                       {project.publicSummary && (
-                        <p className="mt-1 line-clamp-1 text-xs leading-5 text-black/45">
+                        <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-black/45">
                           {project.publicSummary}
                         </p>
                       )}
@@ -131,7 +130,7 @@ export default function ReferenceProjectsMarquee() {
 
         <Link
           href="/projeler"
-          className="mt-7 inline-flex border-b border-black/30 pb-2 text-xs font-medium uppercase tracking-[0.16em] md:hidden"
+          className="mt-5 inline-flex border-b border-black/30 pb-2 text-xs font-medium uppercase tracking-[0.16em] md:hidden"
         >
           Tüm projeler →
         </Link>
@@ -146,7 +145,7 @@ export default function ReferenceProjectsMarquee() {
           display: flex;
           width: max-content;
           gap: 14px;
-          animation: reference-scroll 38s linear infinite;
+          animation: reference-scroll 42s linear infinite;
         }
 
         .reference-marquee:hover .reference-track {
@@ -154,13 +153,13 @@ export default function ReferenceProjectsMarquee() {
         }
 
         .reference-card {
-          width: min(72vw, 350px);
+          width: min(62vw, 270px);
           flex: 0 0 auto;
         }
 
         @media (min-width: 768px) {
           .reference-card {
-            width: min(27vw, 390px);
+            width: min(22vw, 310px);
           }
         }
 
