@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { COOKIE_NAME, SESSION_TTL_SECONDS, createAdminToken, passwordMatches } from "@/lib/admin-auth";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limit = checkRateLimit(request, "admin-login", 5, 15 * 60 * 1000);
+  if (limit.limited) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
     const password = typeof body.password === "string" ? body.password : "";
@@ -13,7 +17,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!await passwordMatches(password)) {
+    if (!password || password.length > 1024 || !await passwordMatches(password)) {
       return NextResponse.json(
         { success: false, message: "Şifre hatalı." },
         { status: 401 },
