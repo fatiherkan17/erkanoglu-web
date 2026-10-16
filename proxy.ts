@@ -4,6 +4,9 @@ import { verifyAdminToken } from "@/lib/admin-auth";
 const PUBLIC_API = new Set([
   "/api/admin/auth/login",
   "/api/admin/auth/logout",
+  // RKN AI preview is intentionally outside the admin login; the endpoint has
+  // its own server-side API key check and request throttling.
+  "/api/rkn-ai/chat",
 ]);
 
 export default async function proxy(request: NextRequest) {
