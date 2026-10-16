@@ -32,9 +32,22 @@ export default function RknAiPreviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || "Yanıt alınamadı.");
-      setMessages((current) => [...current, { role: "assistant", content: data.answer }]);
+
+      const raw = await response.text();
+      let data: { answer?: string; error?: string } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(`Sohbet API'si JSON yerine yanıt verdi (HTTP ${response.status}). Deployment veya API rotası kontrol edilmeli.`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || `Sohbet API'si hata döndürdü (HTTP ${response.status}).`);
+      }
+      if (typeof data.answer !== "string" || !data.answer.trim()) {
+        throw new Error("API isteği başarılı görünüyor ancak yanıt metni gelmedi.");
+      }
+      setMessages((current) => [...current, { role: "assistant", content: data.answer! }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
