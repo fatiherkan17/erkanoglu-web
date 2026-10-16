@@ -17,11 +17,32 @@ Kurallar:
 - Genel konularda yardımcı olabilirsin; genel bilgi ile firma hakkında doğrulanmış bilgiyi birbirinden ayır.
 - Türkçe, açık ve uygulanabilir yanıtlar ver.`;
 
+const requestCounts = new Map<string, { count: number; resetAt: number }>();
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 8;
+
 export async function POST(request: Request) {
+  // Best-effort per-instance throttle to reduce accidental API-cost spikes on this preview.
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const clientKey = forwardedFor?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const current = requestCounts.get(clientKey);
+  if (current && current.resetAt > now && current.count >= MAX_REQUESTS_PER_WINDOW) {
+    return NextResponse.json({ error: "Çok sık mesaj gönderildi. Bir dakika sonra tekrar dene." }, { status: 429 });
+  }
+  if (!current || current.resetAt <= now) {
+    requestCounts.set(clientKey, { count: 1, resetAt: now + WINDOW_MS });
+  } else {
+    current.count += 1;
+  }
+  if (requestCounts.size > 5000) {
+    for (const [key, value] of requestCounts) if (value.resetAt <= now) requestCounts.delete(key);
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "OPENAI_API_KEY sunucu ortamında tanımlı değil. Vercel Environment Variables ayarını kontrol edin." },
+      { error: "OPENAI_API_KEY Preview ortamında tanımlı değil. Önizlemede sohbeti kullanmak için Vercel'de bu değişkeni Preview ortamına da eklemek gerekiyor." },
       { status: 503 },
     );
   }
@@ -59,10 +80,7 @@ export async function POST(request: Request) {
         model: "gpt-4o-mini",
         temperature: 0.3,
         max_tokens: 700,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...safeMessages,
-        ],
+        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...safeMessages],
       }),
       signal: AbortSignal.timeout(30000),
     });
